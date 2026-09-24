@@ -1,0 +1,15 @@
+{
+  "name": "danjoo-project-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@netlify/database": "2.0.1"
+  },
+  "devDependencies": {
+    "netlify-cli": "27.8.0"
+  }
+}

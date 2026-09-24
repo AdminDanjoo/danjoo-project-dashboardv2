@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Danjoo Project Dashboard — Concept</title>
+<style>
+  :root{
+    --sp-blue:#0078D4;
+    --sp-blue-dark:#106EBE;
+    --bg:#FAF9F8;
+    --card:#FFFFFF;
+    --border:#EDEBE9;
+    --text:#201F1E;
+    --text-muted:#605E5C;
+    --green-bg:#DFF6DD; --green-text:#0B6A0B;
+    --amber-bg:#FFF4CE; --amber-text:#8A6D00;
+    --red-bg:#FDE7E9; --red-text:#A80000;
+    --grey-bg:#F3F2F1; --grey-text:#605E5C;
+    --blue-bg:#DEECF9; --blue-text:#004578;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size:14px;
+  }
+  .app{max-width:1180px; margin:0 auto; padding:24px 20px 60px;}
+  .top{display:flex; align-items:baseline; gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); flex-wrap:wrap;}
+  h1{font-size:19px; font-weight:600; margin:0; letter-spacing:-.01em;}
+  .sub{color:var(--text-muted); font-size:12.5px;}
+  .note{color:var(--text-muted); font-size:12.5px; margin:2px 0 10px;}
+  .note b{color:var(--text);}
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); margin:16px 0; flex-wrap:wrap;}
+  .tab{
+    padding:10px 16px; font-size:13.5px; font-weight:600; color:var(--text-muted);
+    cursor:pointer; border-bottom:2px solid transparent; user-select:none; white-space:nowrap;
+  }
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--sp-blue); border-bottom-color:var(--sp-blue);}
+  .tab .count{
+    display:inline-block; margin-left:6px; background:var(--grey-bg); color:var(--text-muted);
+    border-radius:10px; padding:1px 7px; font-size:11px; font-weight:600;
+  }
+  .tab.active .count{background:var(--blue-bg); color:var(--sp-blue);}
+  .view-desc{color:var(--text-muted); font-size:12.5px; margin:-6px 0 14px;}
+  .hint{color:var(--sp-blue-dark); font-weight:600;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:4px; overflow-x:auto; overflow-y:hidden; box-shadow:0 1px 2px rgba(0,0,0,0.04);}
+  table{width:100%; border-collapse:collapse;}
+  #tableCard table{table-layout:fixed; min-width:1150px;}
+  thead th{
+    text-align:left; font-size:12px; font-weight:600; color:var(--text-muted);
+    padding:9px 12px; border-bottom:1px solid var(--border); background:#FBFBFB; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  thead th.sortable-th{cursor:pointer; user-select:none;}
+  thead th.sortable-th:hover{color:var(--text); background:#F3F2F1;}
+  thead th.active-sort{color:var(--sp-blue);}
+  tbody td{padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:top; font-size:13px;}
+  tbody tr:hover{background:#F3F9FD;}
+  tbody tr.group-row td{
+    background:#F3F2F1; font-weight:600; font-size:12px; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:.03em; padding:8px 12px;
+  }
+  .client{font-weight:600;}
+  .addr{color:var(--text-muted); font-size:12px; margin-top:1px;}
+  .pill{display:inline-block; padding:2px 9px; border-radius:11px; font-size:12px; font-weight:600; white-space:nowrap;}
+  .pill.inprogress{background:var(--blue-bg); color:var(--blue-text);}
+  .pill.completed{background:var(--green-bg); color:var(--green-text);}
+  .pill.standby{background:var(--grey-bg); color:var(--grey-text);}
+  .pill.pending{background:var(--amber-bg); color:var(--amber-text);}
+  .pill.priority{background:var(--red-bg); color:var(--red-text);}
+  .pill.small{font-size:11px; padding:1px 7px;}
+  .bar-wrap{display:flex; align-items:center; gap:6px;}
+  .bar{width:60px; height:6px; border-radius:3px; background:var(--grey-bg); overflow:hidden;}
+  .bar > div{height:100%; background:var(--sp-blue);}
+  .muted{color:var(--text-muted);}
+  .stale{color:var(--red-text); font-weight:600;}
+  .comment{color:var(--text-muted); font-size:12.5px; max-width:260px;}
+  .foot{margin-top:22px; padding:14px 16px; background:#F3F9FD; border:1px solid #D0E7F8; border-radius:4px; font-size:12.5px; color:var(--text-muted);}
+  .foot b{color:var(--text);}
+
+  .editable-pct{cursor:pointer; padding:3px 5px; margin:-3px -5px; border-radius:4px; border:1px dashed transparent;}
+  .editable-pct:hover{background:#FFF9E8; border-color:#F3C948;}
+  .pct-val{font-weight:600;}
+  .pct-input{width:48px; font-size:13px; padding:2px 4px; border:1px solid var(--sp-blue); border-radius:3px; outline:none;}
+  .editable-stage{cursor:pointer; padding:3px 6px; margin:-3px -6px; border-radius:4px; border:1px dashed transparent; display:inline-block;}
+  .editable-stage:hover{background:#FFF9E8; border-color:#F3C948;}
+  .stage-input{font-size:13px; padding:3px 5px; border:1px solid var(--sp-blue); border-radius:3px; outline:none; font-family:inherit;}
+  .editable-status{cursor:pointer; padding:3px 6px; margin:-3px -6px; border-radius:4px; border:1px dashed transparent; display:inline-block;}
+  .editable-status:hover{background:#FFF9E8; border-color:#F3C948;}
+  .auto-pct{cursor:default;}
+  .workload-chart-wrap{padding:6px 0;}
+
+  .editable-date{cursor:pointer; padding:2px 4px; margin:-2px -4px; border-radius:4px; border:1px dashed transparent;}
+  .editable-date:hover{background:#FFF9E8; border-color:#F3C948;}
+  .date-input{font-size:12px; padding:2px 4px; border:1px solid var(--sp-blue); border-radius:3px; outline:none; font-family:inherit;}
+  .editable-comment{cursor:pointer; padding:2px 4px; margin:-2px -4px; border-radius:4px; border:1px dashed transparent; display:block; min-height:16px;}
+  .editable-text{cursor:pointer; padding:2px 4px; margin:-2px -4px; border-radius:4px; border:1px dashed transparent; display:inline-block; max-width:100%;}
+  .editable-text:hover{background:#FFF9E8; border-color:#F3C948;}
+  .text-input{font-size:13px; padding:2px 4px; border:1px solid var(--sp-blue); border-radius:3px; outline:none; font-family:inherit; width:100%; box-sizing:border-box;}
+  .editable-type{cursor:pointer; padding:3px 6px; margin:-3px -6px; border-radius:4px; border:1px dashed transparent; display:inline-block;}
+  .editable-type:hover{background:#FFF9E8; border-color:#F3C948;}
+  .editable-what{cursor:pointer; padding:2px 4px; margin:-2px -4px; border-radius:4px; border:1px dashed transparent; display:inline-block; max-width:100%;}
+  .editable-what:hover{background:#FFF9E8; border-color:#F3C948;}
+  .editable-comment:hover{background:#FFF9E8; border-color:#F3C948;}
+  .comment-input{width:100%; font-size:12.5px; padding:5px 7px; border:1px solid var(--sp-blue); border-radius:3px; outline:none; font-family:inherit; resize:vertical; min-height:46px;}
+
+  .seg-toggle{display:inline-flex; border:1px solid #C8C6C4; border-radius:4px; overflow:hidden;}
+  .seg-btn{background:#fff; border:none; padding:7px 14px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; border-right:1px solid #C8C6C4;}
+  .seg-btn:last-child{border-right:none;}
+  .seg-btn:hover{background:var(--grey-bg);}
+  .seg-btn.active{background:var(--sp-blue); color:#fff;}
+
+  .toolbar{margin-bottom:10px; min-height:32px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap;}
+  .toolbar-left{display:flex; gap:8px;}
+  .toolbar-right{display:flex; gap:8px;}
+  .filter-sort-group{display:flex; gap:8px;}
+  .dropdown{position:relative;}
+  .dropdown-panel{position:absolute; top:38px; left:0; background:#fff; border:1px solid #C8C6C4; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.14); padding:10px 12px; min-width:210px; z-index:40;}
+  .dd-label{font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.03em; margin:2px 0 4px;}
+  .dropdown-divider{border-top:1px solid var(--border); margin:8px 0;}
+  .filter-row{display:flex; align-items:center; gap:7px; padding:4px 2px; font-size:13px; cursor:pointer; white-space:nowrap;}
+  .filter-row input{cursor:pointer;}
+  .owner-manage-row{display:flex; align-items:center; gap:4px;}
+  .owner-remove-btn{background:none; border:none; color:var(--text-muted); font-size:16px; line-height:1; cursor:pointer; padding:2px 7px; border-radius:3px;}
+  .owner-remove-btn:hover{background:var(--red-bg); color:var(--red-text);}
+  .owner-add-row{display:flex; gap:6px; margin-top:8px;}
+  .owner-add-input{flex:1; font-size:13px; padding:5px 7px; border:1px solid #C8C6C4; border-radius:4px; font-family:inherit; min-width:0;}
+  .owner-new-input{width:130px;}
+  .btn-primary{background:var(--sp-blue); color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;}
+  .btn-primary:hover{background:var(--sp-blue-dark);}
+  .btn-secondary{background:#fff; color:var(--text); border:1px solid #C8C6C4; padding:7px 14px; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer; margin-left:6px;}
+  .btn-secondary:hover{background:var(--grey-bg);}
+  .btn-danger{background:var(--red-text); color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:13px; font-weight:600; cursor:pointer;}
+  .btn-danger:hover{background:#800000;}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(32,31,30,0.45); display:flex; align-items:center; justify-content:center;
+    z-index:200; padding:16px; overflow-y:auto;
+  }
+  .modal-box{background:var(--card); border-radius:6px; padding:20px 22px; max-width:400px; width:100%; box-shadow:0 10px 30px rgba(0,0,0,0.28); margin:auto;}
+  .modal-box h3{margin:0 0 8px; font-size:15px; font-weight:600; color:var(--text);}
+  .modal-box p{margin:0 0 18px; font-size:13px; color:var(--text-muted); line-height:1.5;}
+  .modal-box p b{color:var(--text);}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px;}
+  tr.new-row td{background:#F3F9FD;}
+  .new-row-form{display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:4px 0;}
+  .new-row-form input, .new-row-form select{font-size:13px; padding:6px 8px; border:1px solid #C8C6C4; border-radius:4px; font-family:inherit;}
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#212121; color:#fff; padding:9px 16px; border-radius:6px; font-size:13px;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:50;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25); max-width:480px;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .toast b{color:#7EC7FF;}
+
+  /* Gantt */
+  .gantt-card{background:var(--card); border:1px solid var(--border); border-radius:4px; overflow:hidden;}
+  .gantt-legend{display:flex; gap:14px; flex-wrap:wrap; padding:10px 14px; border-bottom:1px solid var(--border); font-size:11.5px; color:var(--text-muted);}
+  .legend-item{display:flex; align-items:center; gap:5px;}
+  .swatch{width:14px; height:9px; border-radius:2px; display:inline-block;}
+  .gantt-scroll{overflow-x:auto; overflow-y:hidden;}
+  .gantt-scroll-content{position:relative;}
+  .gantt-row{display:flex; border-bottom:1px solid #DDDBD9;}
+  .gantt-row:last-child{border-bottom:none;}
+  .gantt-row.month-row{height:20px;}
+  .gantt-row.week-header-row{height:22px;}
+  .gantt-row.header-row{background:#FBFBFB;}
+  .gantt-label{
+    flex:0 0 var(--gantt-label-w, 220px); width:var(--gantt-label-w, 220px); position:sticky; left:114px; z-index:10; background:#fff;
+    padding:0 12px; font-size:12.5px; border-right:1px solid var(--border); display:flex; flex-direction:column; justify-content:center;
+  }
+  .gantt-row.header-row .gantt-label{background:#FBFBFB;}
+  .gantt-label .client{font-size:13px;}
+  .gantt-label-title{font-weight:600; color:var(--text-muted);}
+  .gantt-resize-handle{
+    position:absolute; top:0; right:-3px; width:7px; height:100%; cursor:col-resize; z-index:13;
+  }
+  .gantt-resize-handle::after{content:''; position:absolute; top:0; bottom:0; left:3px; width:1px; background:transparent;}
+  .gantt-resize-handle:hover::after, .gantt-resize-handle.dragging::after{background:var(--sp-blue);}
+  .gantt-timeline{position:relative; flex:0 0 auto;}
+  .gantt-row:not(.header-row) .gantt-timeline{
+    background-image:repeating-linear-gradient(to right, var(--border) 0, var(--border) 1px, transparent 1px, transparent 46px);
+  }
+  .month-band{position:absolute; top:0; bottom:0; border-left:1px solid var(--border); font-size:11px; font-weight:600; color:var(--text-muted); padding:3px 0 0 6px; white-space:nowrap;}
+  .week-col{position:absolute; top:0; bottom:0; border-left:1px solid var(--border); font-size:9.5px; color:var(--text-muted); text-align:left; padding:4px 0 0 4px;}
+  .gantt-bar{
+    position:absolute; border-radius:4px; overflow:hidden;
+    display:flex; align-items:center; font-size:10.5px; color:#fff; font-weight:600; white-space:nowrap; z-index:2;
+  }
+  .seg-wait{background:repeating-linear-gradient(45deg,#F3C948,#F3C948 5px,#FBE49A 5px,#FBE49A 10px); color:#5C4A00;}
+  .seg-active{background:var(--sp-blue);}
+  .seg-completed{background:#5EA35E;}
+  .seg-hold{background:repeating-linear-gradient(45deg,#C8C6C4,#C8C6C4 5px,#E1DFDD 5px,#E1DFDD 10px); color:#484644;}
+  .seg-pending{background:#FFB900; color:#4A3B00;}
+  .seg-overdue{background:#D13438; color:#fff;}
+  .seg-label{padding:0 6px; overflow:hidden; text-overflow:ellipsis;}
+  .today-line{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed #D13438; z-index:5;}
+  .today-tag{
+    position:absolute; top:-1px; transform:translateX(-50%); background:#D13438; color:#fff;
+    font-size:10px; font-weight:700; padding:1px 6px; border-radius:3px; white-space:nowrap; z-index:6;
+  }
+  .gantt-dates{font-size:10.5px; color:var(--text-muted); margin-top:1px;}
+  .task-dates{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; display:inline-block;}
+  .gantt-drag-bar{cursor:grab;}
+  .gantt-drag-bar:active{cursor:grabbing;}
+  .gantt-status-only, .gantt-task-bar{cursor:pointer;}
+  .gantt-status-select{width:100%; height:100%; border:none; outline:none; font-size:10.5px; font-weight:600; padding:0 4px; background:#fff; color:var(--text); font-family:inherit;}
+
+  .insight{background:#FFF9E8; border:1px solid #F3C948; border-radius:4px; padding:10px 14px; margin-bottom:10px; font-size:12.5px; color:#5C4A00;}
+  .insight b{color:#3D3000;}
+
+  .phase-toggle-btn, .action-expand-btn{background:none; border:1px solid #C8C6C4; border-radius:4px; width:22px; height:22px; line-height:1; font-size:12px; cursor:pointer; color:var(--text-muted); flex:0 0 auto;}
+  .phase-toggle-btn:hover, .action-expand-btn:hover{background:var(--grey-bg); color:var(--text);}
+  .action-expand-btn{margin-right:8px;}
+  tr.phase-subrow td{background:#FBFBFB; padding:12px 16px 14px 40px; border-bottom:1px solid var(--border);}
+  tr.phase-subrow td::before, tr.project-group-row td::before{content:none;}
+  .phase-list{display:flex; flex-direction:column; gap:6px; margin-bottom:10px;}
+  .phase-item{display:flex; align-items:center; gap:8px; font-size:12.5px;}
+  .phase-item .phase-name{font-weight:600;}
+  .editable-phase-status{cursor:pointer; padding:1px 2px; margin:-1px -2px; border-radius:4px; border:1px dashed transparent; display:inline-block;}
+  .editable-phase-status:hover{background:#FFF9E8; border-color:#F3C948;}
+  .editable-phase-date{cursor:pointer; padding:1px 3px; margin:-1px -3px; border-radius:4px; border:1px dashed transparent;}
+  .editable-phase-date:hover{background:#FFF9E8; border-color:#F3C948;}
+  .phase-remove-btn{margin-left:auto; background:none; border:none; color:var(--text-muted); font-size:15px; line-height:1; cursor:pointer; padding:2px 6px; border-radius:3px;}
+  .phase-remove-btn:hover{background:var(--red-bg); color:var(--red-text);}
+  .phase-add-row{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .phase-add-row select, .phase-add-row input{font-size:12.5px; padding:5px 7px; border:1px solid #C8C6C4; border-radius:4px; font-family:inherit;}
+  tr.project-group-row td{background:#F3F9FD; padding:8px 12px; border-bottom:1px solid var(--border); font-size:13px;}
+  .edit-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin-top:4px;}
+  .edit-grid label{display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.03em;}
+  .edit-grid input, .edit-grid select{font-size:13px; padding:7px 9px; border:1px solid #C8C6C4; border-radius:4px; font-family:inherit; color:var(--text); text-transform:none; font-weight:400; letter-spacing:normal;}
+  .modal-box-lg{max-width:580px;}
+  .history-label{margin-top:16px; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.03em;}
+  .history-list{margin-top:6px; max-height:150px; overflow-y:auto; border:1px solid var(--border); border-radius:4px;}
+  .history-item{display:flex; gap:10px; padding:6px 9px; font-size:12px; border-bottom:1px solid var(--border);}
+  .history-item:last-child{border-bottom:none;}
+  .history-ts{flex:0 0 auto; color:var(--text-muted); white-space:nowrap;}
+  .history-text{color:var(--text);}
+  .gantt-num{flex:0 0 30px; width:30px; position:sticky; left:0; z-index:11; background:#fff; font-size:11.5px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; border-right:1px solid var(--border);}
+  .gantt-row.header-row .gantt-num{background:#FBFBFB;}
+  .gantt-jobtype{flex:0 0 84px; width:84px; position:sticky; left:30px; z-index:11; background:#fff; font-size:11px; color:var(--text-muted); display:flex; align-items:center; padding:0 8px; border-right:1px solid var(--border); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .gantt-row.header-row .gantt-jobtype{background:#FBFBFB;}
+  .bar-date-text{font-weight:400; opacity:.9;}
+
+  .mobile-sort{display:none; align-items:center; gap:6px;}
+  .mobile-sort select{font-size:13px; padding:6px 8px; border:1px solid #C8C6C4; border-radius:4px; font-family:inherit; max-width:150px;}
+  .mobile-sort .btn-secondary{margin-left:0; padding:7px 11px;}
+
+  @media (max-width: 720px){
+    .app{padding:14px 12px 44px;}
+    .top{gap:8px;}
+    h1{font-size:16.5px;}
+    .sub{font-size:11.5px;}
+    .tabs{gap:2px;}
+    .tab{padding:8px 9px; font-size:12.5px;}
+    .toolbar-left{flex-wrap:wrap; row-gap:8px;}
+    .mobile-sort{display:flex;}
+    .dropdown-panel{min-width:0; width:min(280px, 84vw);}
+    .gantt-jobtype{flex:0 0 56px; width:56px; left:30px; font-size:9.5px; padding:0 5px;}
+    .gantt-label{flex:0 0 128px; width:128px; padding:0 8px; left:86px;}
+    .gantt-label .client{font-size:12.5px;}
+    .task-dates{max-width:100px;}
+    .edit-grid{grid-template-columns:1fr;}
+
+    #tableCard table, #tableCard tbody, #tableCard tr{ display:block; width:100%; }
+    #tableCard thead{ display:none; }
+    #tableCard tbody tr:not(.group-row){ border-bottom:1px solid var(--border); }
+    #tableCard tbody tr:hover{ background:none; }
+    #tableCard tbody td{
+      display:block; width:100%; padding:7px 12px; border-bottom:1px dashed var(--border);
+      box-sizing:border-box;
+    }
+    #tableCard tbody tr:not(.group-row) td:last-child{ border-bottom:none; }
+    #tableCard tbody tr.group-row td{ padding:8px 12px; }
+    #tableCard tbody td::before{
+      content: attr(data-label); display:block; font-size:10px; font-weight:700; color:var(--text-muted);
+      text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px;
+    }
+    #tableCard tbody tr.group-row td::before{ content:none; }
+    .comment{ max-width:none; }
+    .bar{ width:110px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><h1>Danjoo Project Dashboard</h1><span class="sub">Live tracker — Projects, Actions &amp; Programme</span><span class="sub" id="syncStatus" style="margin-left:auto;"></span></div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="view-desc" id="viewDesc"></div>
+  <div class="toolbar" id="toolbar"></div>
+  <div class="insight" id="insightBox" style="display:none;"></div>
+  <div class="card" id="tableCard"><table>
+    <thead><tr id="theadRow"></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table></div>
+  <div class="gantt-card" id="ganttCard" style="display:none;"></div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TODAY = (function(){ const d = new Date(); d.setHours(0,0,0,0); return d; })();
+const WEEK_WIDTH = 46;
+const PHASE_NAMES = ['Phase 1 – Feasibility / Concept Drawings','Phase 2 – Working Drawings','Phase 3 – Construction'];
+/* Phases and tasks now share the exact same 4-value status vocabulary as projects (STATUS_OPTIONS,
+   declared below) — no more separate "On Hold"/"Not Started"/"Done" spellings to keep in sync. */
+function phaseStatusOptions(){ return STATUS_OPTIONS; }
+function mapStatusToPhaseStatus(status){ return status; }
+function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
+
+function addDays(dstr,n){ if(!dstr) return null; const d=new Date(dstr); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+
+/* Imported from the live dashboard (danjoo-project-dashboard.netlify.app) on 2026-09-24 — the
+   17 non-deleted jobs and their open tasks, remapped onto the new 3-phase model below. */
+const SEED_ROWS = [
+  {client:'Bill Pipe', type:'Lift Shaft', quote:'5465', job:'2542', status:'In Progress', stage:'Phase 1 – Feasibility / Concept Drawings', pct:100, priority:false, modified:'2026-09-24', comment:'Meeting to be set', start:'2026-07-21', end:'2026-12-06', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-07-21', end:'2026-12-06', status:'In Progress'}]},
+  {client:'Tan', type:'Extension', quote:'5364', job:'2510', status:'In Progress', stage:'Phase 1 – Feasibility / Concept Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'Awaiting quote', start:'2026-08-10', end:'2026-10-05', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-08-10', end:'2026-10-05', status:'In Progress'}]},
+  {client:'Collard', type:'Extension', quote:'—', job:'2052', status:'In Progress', stage:'Phase 1 – Feasibility / Concept Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'Meeting to be set', start:'2026-08-18', end:'2026-10-05', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-08-18', end:'2026-10-05', status:'In Progress'}]},
+  {client:'Wells', type:'Lift Shaft', quote:'5574', job:'2574', status:'In Progress', stage:'Phase 1 – Feasibility / Concept Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'Feasibility to be checked', start:'2026-08-31', end:'2026-11-29', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-08-31', end:'2026-11-29', status:'In Progress'}]},
+  {client:'David & Pam Hudson', type:'Lift Shaft', quote:'5419', job:'2533', status:'Standby', stage:'Phase 1 – Feasibility / Concept Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'Meeting to be set', start:'2026-07-07', end:'2026-10-05', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-07-07', end:'2026-10-05', status:'Standby'}]},
+  {client:'Catherine Hudson', type:'Extension', quote:'5361', job:'2506', status:'Standby', stage:'Phase 1 – Feasibility / Concept Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'Awaiting survey to complete concept drawings', start:'2026-06-11', end:'2026-10-05', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-06-11', end:'2026-10-05', status:'Standby'}]},
+  {client:'Jennifer Tomich', type:'Lift Shaft', quote:'—', job:'2582', status:'In Progress', stage:'Phase 3 – Construction', pct:100, priority:false, modified:'2026-09-24', comment:'Meeting to be set', start:'2026-06-04', end:'2026-09-17', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 3 – Construction', start:'2026-06-04', end:'2026-09-17', status:'In Progress'}]},
+  {client:'Karen Fresson', type:'Lift Shaft', quote:'5561', job:'2525', status:'In Progress', stage:'Phase 2 – Working Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'to be quoted', start:'2026-08-24', end:'2026-10-05', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 2 – Working Drawings', start:'2026-08-24', end:'2026-10-05', status:'In Progress'}]},
+  {client:'John Lindquist', type:'Lift Shaft', quote:'5344', job:'2469', status:'Standby', stage:'Phase 2 – Working Drawings', pct:75, priority:false, modified:'2026-09-24', comment:'Job to be scheduled for 03./27', start:'2026-06-09', end:'2026-09-06', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 2 – Working Drawings', start:'2026-06-09', end:'2026-09-06', status:'Standby'}]},
+  {client:'Dean Kemp', type:'Lift Shaft', quote:'—', job:'2466', status:'Standby', stage:'Phase 2 – Working Drawings', pct:0, priority:false, modified:'2026-09-22', comment:'', start:'2026-10-20', end:'2026-11-16', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 2 – Working Drawings', start:'2026-10-20', end:'2026-11-16', status:'Standby'}]},
+  {client:'Glenn Joyce', type:'Lift Shaft', quote:'5379', job:'2463', status:'In Progress', stage:'Phase 2 – Working Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'Working drawings to be quoted', start:'2026-06-17', end:'2026-10-05', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 2 – Working Drawings', start:'2026-06-17', end:'2026-10-05', status:'In Progress'}]},
+  {client:'Sandwell', type:'Lift Shaft', quote:'—', job:'2401', status:'Pending', stage:'Phase 2 – Working Drawings', pct:0, priority:false, modified:'2026-09-22', comment:'At council', start:'2026-04-22', end:'2026-09-29', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 2 – Working Drawings', start:'2026-04-22', end:'2026-09-29', status:'Standby'}]},
+  {client:'Hugh Gillespie', type:'Lift Shaft', quote:'—', job:'2434', status:'In Progress', stage:'Phase 2 – Working Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'Awaiting quotes', start:'2026-05-19', end:'2026-09-29', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 2 – Working Drawings', start:'2026-05-19', end:'2026-09-29', status:'In Progress'}]},
+  {client:'David Wood', type:'Lift Shaft', quote:'—', job:'2435', status:'Completed', stage:'Phase 3 – Construction', pct:100, priority:false, modified:'2026-09-22', comment:'', start:'2026-09-14', end:'2026-09-18', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 3 – Construction', start:'2026-09-14', end:'2026-09-18', status:'Completed'}]},
+  {client:'Joe Dickinson', type:'Extension', quote:'5175', job:'2450', status:'In Progress', stage:'Phase 1 – Feasibility / Concept Drawings', pct:75, priority:false, modified:'2026-09-22', comment:'', start:'2026-03-24', end:'2026-06-22', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-03-24', end:'2026-06-22', status:'In Progress'}]},
+  {client:'Reagan', type:'Extension', quote:'—', job:'2441', status:'In Progress', stage:'Phase 2 – Working Drawings', pct:0, priority:false, modified:'2026-09-22', comment:'Scheduled 21.09', start:'2026-07-01', end:'2026-09-29', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 2 – Working Drawings', start:'2026-07-01', end:'2026-09-29', status:'In Progress'}]},
+  {client:'Mohen', type:'Extension', quote:'—', job:'2488', status:'In Progress', stage:'Phase 1 – Feasibility / Concept Drawings', pct:0, priority:false, modified:'2026-09-22', comment:'Reached out to client 14/09 to book in meeting', start:'2026-05-26', end:'2026-09-29', liftOrdered:null, liftExpected:null, siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:'Phase 1 – Feasibility / Concept Drawings', start:'2026-05-26', end:'2026-09-29', status:'In Progress'}]}
+];
+SEED_ROWS.forEach((r,i)=>{ r.idx = i; r.deleted = false; });
+
+function monthsFrom(base, n){ const d = new Date(base); d.setMonth(d.getMonth()+n); return d; }
+const _allDates = [];
+SEED_ROWS.forEach(r=>{
+  const ds = [r.start,r.end,r.liftOrdered,r.liftExpected];
+  (r.phases||[]).forEach(p=>{ ds.push(p.start,p.end); });
+  ds.forEach(d=>{ if(d) _allDates.push(new Date(d).getTime()); });
+});
+const _earliest = _allDates.length ? new Date(Math.min.apply(null,_allDates)) : TODAY;
+const _latest = _allDates.length ? new Date(Math.max.apply(null,_allDates)) : TODAY;
+const RANGE_START = new Date(Math.min(_earliest.getTime(), monthsFrom(TODAY,-1).getTime()));
+RANGE_START.setDate(1);
+const RANGE_END = new Date(Math.max(monthsFrom(TODAY,12).getTime(), _latest.getTime()));
+
+const STATUS_OPTIONS = ['In Progress','Pending','Standby','Completed'];
+/* "Standby" is the stored value everywhere (data, filters, sorting); only the on-screen text reads
+   "Standby/On Hold" — renaming the value itself would mean migrating every row, phase and filter. */
+const STATUS_LABELS = {'Standby':'Standby/On Hold'};
+function statusLabel(s){ return STATUS_LABELS[s] || s; }
+function statusPillClass(s){ return {'In Progress':'inprogress','Pending':'pending','Standby':'standby','Completed':'completed'}[s] || 'standby'; }
+/* One colour rule for every bar in the Programme tab — project phase, task, whatever: blue = In
+   Progress, yellow = Pending, grey = Standby/On Hold, green = Completed. Red always wins over all
+   of those the moment the end date has passed and the thing still isn't marked Completed. */
+function barStatusClass(status, endDate){
+  if(status!=='Completed' && endDate && new Date(endDate) < TODAY) return 'seg-overdue';
+  if(status==='Completed') return 'seg-completed';
+  if(status==='In Progress') return 'seg-active';
+  if(status==='Pending') return 'seg-pending';
+  return 'seg-hold';
+}
+
+const TASK_STATUSES = STATUS_OPTIONS;
+const SEED_TASKS_RAW = [
+  {client:'John Lindquist', task:'Construction', owner:'Chris', status:'In Progress', start:'2027-03-01', end:'2027-04-05', projectIdx:8},
+  {client:'Glenn Joyce', task:'Feasibility Assessment', owner:'Chris', status:'Completed', start:'2026-04-20', end:'2026-06-18', projectIdx:10},
+  {client:'Dean Kemp', task:'Feasibility Assessment', owner:'Chris', status:'Completed', start:'2026-02-06', end:'2026-05-02', projectIdx:9},
+  {client:'Dean Kemp', task:'Working Drawings', owner:'Chris', status:'Completed', start:'2026-04-30', end:'2026-08-10', projectIdx:9},
+  {client:'Sandwell', task:'Feasibility Assessment', owner:'Chris', status:'Completed', start:'2026-01-15', end:'2026-04-20', projectIdx:11},
+  {client:'Hugh Gillespie', task:'Feasibility Assessment', owner:'Chris', status:'Completed', start:'2026-02-23', end:'2026-05-19', projectIdx:12},
+  {client:'Reagan', task:'Concept Design Drawings', owner:'Chris', status:'Completed', start:'2026-04-03', end:'2026-07-01', projectIdx:15},
+  {client:'Karen Fresson', task:'Feasibility Assessment', owner:'Rachel', status:'Completed', start:'2026-06-20', end:'2026-08-25', projectIdx:7}
+];
+const SEED_TASKS = SEED_TASKS_RAW.map((t,i)=>{
+  const proj = SEED_ROWS[t.projectIdx];
+  const pct = t.status==='Completed' ? 100 : (t.status==='In Progress' ? 50 : 0);
+  return {idx:i, projectIdx:t.projectIdx, client:t.client, phase:proj.stage, task:t.task, owner:t.owner, status:t.status, pct, start:t.start, end:t.end, comment:'', deleted:false};
+});
+const SEED_OWNERS = ['Rachel','Chris','Joseph Bellis','Unassigned'];
+
+let rows = SEED_ROWS.map(r=>({...r, phases:(r.phases||[]).map(p=>({...p}))}));
+let tasks = SEED_TASKS.map(t=>({...t}));
+
+function daysAgo(dstr){ return Math.round((TODAY - new Date(dstr)) / 86400000); }
+function daysUntil(dstr){ return Math.round((new Date(dstr) - TODAY) / 86400000); }
+function fmt(dstr){ if(!dstr) return '—'; return new Date(dstr).toLocaleDateString('en-AU',{day:'2-digit',month:'short'}); }
+function statusPill(s){ return `<span class="pill ${statusPillClass(s)}">${statusLabel(s)}</span>`; }
+function todayStr(){
+  const y = TODAY.getFullYear(), m = String(TODAY.getMonth()+1).padStart(2,'0'), d = String(TODAY.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function shortStage(s){ return (s||'').replace(/^Phase \d+ – /,''); }
+function linkedTasks(rIdx){ return tasks.filter(t=>!t.deleted && t.projectIdx===rIdx); }
+function effectivePct(r){
+  const lt = linkedTasks(r.idx);
+  if(!lt.length) return r.pct;
+  return Math.round(lt.reduce((s,t)=>s+t.pct,0)/lt.length);
+}
+function currentPhase(r){
+  if(!r.phases || !r.phases.length) return null;
+  const inProgress = r.phases.find(p=>p.status==='In Progress');
+  if(inProgress) return inProgress;
+  return [...r.phases].sort((a,b)=>phaseNum(b.name)-phaseNum(a.name))[0];
+}
+
+let OWNERS = SEED_OWNERS.slice();
+
+/* ---- Concept-mode persistence: kept in memory for this tab only, no live backend ---- */
+let dbAvailable = true;
+function updateSyncStatus(){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.innerHTML = '<span style="color:var(--amber-text);">●</span> Concept preview — changes stay in this tab only';
+}
+async function persist(){ return Promise.resolve(); }
+function persistProject(){ return persist(); }
+function persistNewProject(){ return persist(); }
+function persistTask(){ return persist(); }
+function persistNewTask(){ return persist(); }
+function persistOwners(){ return persist(); }
+
+/* ---- Change history: every edit is logged against the project/task it touched, shown in the Edit screen ---- */
+function logChange(target, text){
+  if(!target) return;
+  target.history = target.history || [];
+  target.history.unshift({ts: Date.now(), text});
+  if(target.history.length>25) target.history.length = 25;
+}
+function notify(target, msg){
+  logChange(target, msg);
+  showToast(msg);
+}
+function historyListHtml(target){
+  const h = target.history || [];
+  if(!h.length) return `<div class="muted" style="font-size:12px;">No changes logged yet.</div>`;
+  return `<div class="history-list">${h.map(entry=>`<div class="history-item"><span class="history-ts">${new Date(entry.ts).toLocaleString('en-AU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span><span class="history-text">${entry.text}</span></div>`).join('')}</div>`;
+}
+
+function addOwner(name){
+  name = (name||'').trim();
+  if(!name) return false;
+  if(OWNERS.some(o=>o.toLowerCase()===name.toLowerCase())) return false;
+  const unassignedIdx = OWNERS.indexOf('Unassigned');
+  if(unassignedIdx>=0) OWNERS.splice(unassignedIdx,0,name); else OWNERS.push(name);
+  actionFilter.owners.add(name);
+  persistOwners();
+  return true;
+}
+function removeOwner(name){
+  if(name==='Unassigned') return;
+  const i = OWNERS.indexOf(name);
+  if(i<0) return;
+  OWNERS.splice(i,1);
+  actionFilter.owners.delete(name);
+  persistOwners();
+  tasks.filter(t=>t.owner===name).forEach(t=>{ t.owner='Unassigned'; persistTask(t.idx, {owner:'Unassigned'}); logChange(t, `Owner reassigned to Unassigned — ${name} was removed as an owner.`); });
+  showToast(`Removed <b>${name}</b> — their tasks were reassigned to Unassigned.`);
+}
+function deleteProject(idx){
+  const row = rows[idx];
+  if(!row || row.deleted) return;
+  row.deleted = true;
+  persistProject(idx, {deleted:true});
+  expandedActionsProject.delete(idx);
+  if(addingTaskFor===idx) addingTaskFor = null;
+  expandedOverview.delete(idx);
+  if(active==='gantt') openDropdown = null;
+  showToast(`<b>${row.client}</b> project deleted — removed from Project Overview, Actions and the Programme.`);
+  render();
+}
+function deleteTask(idx){
+  const t = tasks[idx];
+  if(!t || t.deleted) return;
+  t.deleted = true;
+  persistTask(idx, {deleted:true});
+  showToast(`<b>${t.task}</b> for <b>${t.client}</b> deleted — removed from Actions and the Programme.`);
+  render();
+}
+let overviewFilter = { types: new Set(['Lift Shaft','Extension','Renovation']), statuses: new Set(STATUS_OPTIONS) };
+let overviewSort = { col:'type', dir:'asc' };
+let actionFilter = { owners: new Set(OWNERS), showDone:true };
+let openDropdown = null;
+let expandedOverview = new Set();
+let expandedActionsProject = new Set();
+let addingTaskFor = null;
+let editingField = false;
+
+function phaseNum(stage){ const m = (stage||'').match(/Phase (\d+)/); return m ? parseInt(m[1],10) : 0; }
+
+const OVERVIEW_SORT_COLS = {
+  client:   { label:'Client', cmp:(a,b)=>a.client.localeCompare(b.client) },
+  type:     { label:'Job Type', cmp:(a,b)=>a.type.localeCompare(b.type) },
+  status:   { label:'Status', cmp:(a,b)=>STATUS_OPTIONS.indexOf(a.status)-STATUS_OPTIONS.indexOf(b.status) },
+  stage:    { label:'Current Stage', cmp:(a,b)=>phaseNum(a.stage)-phaseNum(b.stage) },
+  pct:      { label:'% Complete', cmp:(a,b)=>effectivePct(a)-effectivePct(b) },
+  modified: { label:'Last touched', cmp:(a,b)=>new Date(a.modified)-new Date(b.modified) },
+};
+
+function computeCount(key){
+  if(key==='actions') return rows.filter(r=>!r.deleted).reduce((s,r)=>s+projectActionItems(r).length,0);
+  return rows.filter(r=>!r.deleted).length;
+}
+
+/* Single canonical project order, shared by Project Overview, Actions and the Programme —
+   so all three tabs always list projects in the same sequence. */
+function orderProjects(list){
+  const { col, dir } = overviewSort;
+  if(col==='type'){
+    let order = ['Lift Shaft','Extension','Renovation'];
+    if(dir==='desc') order = [...order].reverse();
+    const out = [];
+    for(const t of order){
+      const inType = list.filter(r=>r.type===t);
+      if(!inType.length) continue;
+      const sorted = t==='Lift Shaft'
+        ? inType.sort((a,b)=>(a.liftOrdered||'9999').localeCompare(b.liftOrdered||'9999'))
+        : inType.sort((a,b)=>b.idx-a.idx);
+      out.push({group:t, rows:sorted});
+    }
+    return out;
+  }
+  const cmp = (OVERVIEW_SORT_COLS[col] || OVERVIEW_SORT_COLS.type).cmp;
+  const sorted = [...list].sort((a,b)=> dir==='asc' ? cmp(a,b) : cmp(b,a));
+  return [{group:null, rows:sorted}];
+}
+
+const views = {
+  overview: {
+    label:'Project Overview',
+    desc: 'Every job, grouped by type — use Filter above, or click a column header to sort. Click ▸ to see or add phases; use Edit to update a whole row at once.',
+    cols: ['#','Client','Job Type','Quote# / Job#','Status','Current Stage','% Complete','Last touched','Comments',''],
+    build(){ return buildOverview(); }
+  },
+  actions: {
+    label:'Actions',
+    desc: 'Grouped by job type then by project — in the same order as Project Overview. Expand a project (▸) to see its open items and add a new task.',
+    cols: ['#','Client','What','Owner','Status','% Complete','Last touched','Comments',''],
+    build(){ return buildActions(); }
+  },
+  gantt: {
+    label:'Programme', isGantt:true,
+    desc: 'Weekly timeline, ordered to match Project Overview. Compact shows the current phase only; Detailed expands each project into its full phase history and linked actions, chronologically.'
+  }
+};
+
+function overviewRows(){
+  return rows.filter(r=>!r.deleted && overviewFilter.types.has(r.type) && overviewFilter.statuses.has(r.status));
+}
+function buildOverview(){
+  const filtered = overviewRows();
+  const groups = orderProjects(filtered);
+  const out = [];
+  let n = 1;
+  for(const g of groups){
+    if(g.group) out.push(`<tr class="group-row"><td colspan="10">${g.group} (${g.rows.length})</td></tr>`);
+    g.rows.forEach(r=>{
+      r._num = n++;
+      out.push(rowHtml(r));
+      if(expandedOverview.has(r.idx)) out.push(phaseSubrowHtml(r));
+    });
+  }
+  return out;
+}
+
+function rowHtml(r, cols){
+  cols = cols || ['num','client','type','quotejob','status','stage','pct','modified','comment','edit'];
+  const liftLine = (r.type==='Lift Shaft' && r.liftOrdered) ? `<div class="addr" style="margin-top:2px;">Lift: <span class="editable-date" data-idx="${r.idx}" data-field="liftOrdered" title="Click to edit">${fmt(r.liftOrdered)}</span> → <span class="editable-date" data-idx="${r.idx}" data-field="liftExpected" title="Click to edit">${fmt(r.liftExpected)}</span></div>` : '';
+  const linked = linkedTasks(r.idx);
+  const pctCellHtml = linked.length
+    ? `<td data-label="% Complete"><div class="bar-wrap auto-pct" title="Auto-calculated from ${linked.length} linked task${linked.length>1?'s':''} — edit the tasks to change this"><div class="bar"><div style="width:${effectivePct(r)}%"></div></div><span class="pct-val muted">${effectivePct(r)}%</span></div></td>`
+    : `<td data-label="% Complete"><div class="bar-wrap editable-pct" data-idx="${r.idx}" title="Click to edit"><div class="bar"><div style="width:${r.pct}%"></div></div><span class="pct-val muted">${r.pct}%</span></div></td>`;
+  const chevronOpen = expandedOverview.has(r.idx);
+  const cellMap = {
+    num: `<td class="muted" data-label="#">${r._num||''}</td>`,
+    client: `<td data-label="Client"><div style="display:flex; align-items:flex-start; gap:6px;"><button class="phase-toggle-btn" data-idx="${r.idx}" title="${chevronOpen?'Hide phases':'Show phases'}">${chevronOpen?'▾':'▸'}</button><div><div class="client"><span class="editable-text" data-idx="${r.idx}" data-field="client" data-placeholder="Client name" title="Click to edit">${r.client}</span></div>${liftLine}</div></div></td>`,
+    type: `<td data-label="Job Type"><span class="editable-type" data-idx="${r.idx}" title="Click to edit">${r.type}</span></td>`,
+    quotejob: `<td class="muted" data-label="Quote# / Job#"><span class="editable-text" data-idx="${r.idx}" data-field="quote" data-placeholder="Quote #" title="Click to edit">${r.quote}</span> / <span class="editable-text" data-idx="${r.idx}" data-field="job" data-placeholder="Job #" title="Click to edit">${r.job}</span></td>`,
+    status: `<td data-label="Status"><span class="editable-status" data-idx="${r.idx}" title="Click to edit">${statusPill(r.status)}</span></td>`,
+    stage: `<td data-label="Current Stage"><span class="editable-stage" data-idx="${r.idx}" title="Click to edit">${r.stage}</span></td>`,
+    pct: pctCellHtml,
+    priority: `<td data-label="Priority">${r.priority?'<span class="pill priority small">Priority</span>':'<span class="muted">Standard</span>'}</td>`,
+    modified: `<td class="${daysAgo(r.modified)>=7?'stale':'muted'}" data-label="Last touched">${fmt(r.modified)} ${daysAgo(r.modified)>=7?`(${daysAgo(r.modified)}d)`:''}</td>`,
+    liftOrdered: `<td class="muted" data-label="Lift Ordered"><span class="editable-date" data-idx="${r.idx}" data-field="liftOrdered" title="Click to edit">${fmt(r.liftOrdered)}</span></td>`,
+    liftExpected: `<td class="muted" data-label="Lift Expected"><span class="editable-date" data-idx="${r.idx}" data-field="liftExpected" title="Click to edit">${fmt(r.liftExpected)}</span></td>`,
+    comment: `<td class="comment" data-label="Comments"><span class="editable-comment" data-idx="${r.idx}" title="Click to edit">${r.comment||'—'}</span></td>`,
+    edit: `<td data-label="Edit"><button class="btn-secondary edit-row-btn" data-idx="${r.idx}" style="margin-left:0;">Edit</button></td>`,
+  };
+  return `<tr>${cols.map(c=>cellMap[c]).join('')}</tr>`;
+}
+
+function phaseSubrowHtml(r){
+  const used = new Set((r.phases||[]).map(p=>p.name));
+  const availableNames = PHASE_NAMES.filter(n=>!used.has(n));
+  const sortedPhases = [...(r.phases||[])].sort((a,b)=> phaseNum(a.name)-phaseNum(b.name));
+  const rowsHtml = sortedPhases.map(p=>{
+    const pidx = r.phases.indexOf(p);
+    return `<div class="phase-item">
+      <span class="editable-phase-status" data-idx="${r.idx}" data-pidx="${pidx}" title="Click to edit"><span class="pill small ${statusPillClass(p.status)}">${statusLabel(p.status)}</span></span>
+      <span class="phase-name">${p.name}</span>
+      <span class="muted" style="font-size:12px;"><span class="editable-phase-date" data-idx="${r.idx}" data-pidx="${pidx}" data-field="start" title="Click to edit">${fmt(p.start)}</span> → <span class="editable-phase-date" data-idx="${r.idx}" data-pidx="${pidx}" data-field="end" title="Click to edit">${fmt(p.end)}</span></span>
+      <button class="phase-remove-btn" data-idx="${r.idx}" data-pidx="${pidx}" title="Remove phase">×</button>
+    </div>`;
+  }).join('');
+  const addForm = availableNames.length ? `<div class="phase-add-row">
+      <select class="phase-add-name" data-idx="${r.idx}">${availableNames.map(n=>`<option value="${n}">${n}</option>`).join('')}</select>
+      <input type="date" class="phase-add-start" data-idx="${r.idx}" value="${todayStr()}">
+      <input type="date" class="phase-add-end" data-idx="${r.idx}" value="${addDays(todayStr(),30)}">
+      <select class="phase-add-status" data-idx="${r.idx}">${phaseStatusOptions().map(s=>`<option value="${s}">${statusLabel(s)}</option>`).join('')}</select>
+      <button class="btn-secondary phase-add-btn" data-idx="${r.idx}" style="margin-left:0;">+ Add phase</button>
+    </div>` : `<div class="muted" style="font-size:12px;">All phases added for this project.</div>`;
+  return `<tr class="phase-subrow"><td colspan="10">
+    <div class="dd-label" style="margin-bottom:6px;">Phases for ${r.client}</div>
+    <div class="phase-list">${rowsHtml || '<div class="muted" style="font-size:12.5px;">No phases recorded yet.</div>'}</div>
+    ${addForm}
+  </td></tr>`;
+}
+
+function statusDefaultPct(status){ return status==='Completed' ? 100 : (status==='In Progress' ? 50 : 0); }
+function taskStatusPill(s){
+  const cls = statusPillClass(s);
+  return `<span class="pill ${cls} small">${statusLabel(s)}</span>`;
+}
+
+/* ---- Actions: grouped by Job Type, then by Project (same order as Project Overview) ----
+   Items are tasks only — a project's current phase already shows in its header row (via r.stage),
+   so it isn't repeated here as a pseudo-task. */
+function projectActionItems(r){
+  return tasks.filter(t=>!t.deleted && t.projectIdx===r.idx && (actionFilter.showDone || t.status!=='Completed') && actionFilter.owners.has(t.owner)).map(t=>({
+    kind:'task', type:r.type, client:t.client, owner:t.owner, projRowIdx:r.idx,
+    what: (t.whatOverride!=null && t.whatOverride!=='') ? t.whatOverride : `${t.task} — ${shortStage(t.phase)}`,
+    status:t.status, pct:t.pct, comment:t.comment, taskIdx:t.idx
+  }));
+}
+function actionsProjectIdxs(){
+  return rows.filter(r=>!r.deleted && projectActionItems(r).length).map(r=>r.idx);
+}
+function buildActions(){
+  const groups = orderProjects(rows.filter(r=>!r.deleted));
+  const out = [];
+  let n = 1;
+  for(const g of groups){
+    const withItems = [];
+    g.rows.forEach(r=>{
+      const items = projectActionItems(r);
+      if(items.length) withItems.push({r, items});
+    });
+    if(!withItems.length) continue;
+    if(g.group) out.push(`<tr class="group-row"><td colspan="9">${g.group} (${withItems.reduce((s,x)=>s+x.items.length,0)})</td></tr>`);
+    withItems.forEach(({r,items})=>{
+      out.push(projectHeaderRowHtml(r, n++, items.length));
+      if(expandedActionsProject.has(r.idx)){
+        out.push(...items.map(it=>actionRowHtml(it)));
+        out.push(addingTaskFor===r.idx ? newTaskFormHtmlForProject(r) : addTaskTriggerRowHtml(r));
+      }
+    });
+  }
+  return out;
+}
+function projectHeaderRowHtml(r, num, openCount){
+  const open = expandedActionsProject.has(r.idx);
+  return `<tr class="project-group-row">
+    <td class="muted" data-label="#">${num}</td>
+    <td colspan="8">
+      <button class="action-expand-btn" data-idx="${r.idx}" title="${open?'Hide items':'Show items for this project'}">${open?'▾':'▸'}</button>
+      <span class="client">${r.client}</span> <span class="muted">- ${r.stage}</span>
+      <span class="pill small standby" style="margin-left:10px;">${openCount} open</span>
+    </td>
+  </tr>`;
+}
+function addTaskTriggerRowHtml(r){
+  return `<tr class="action-add-task-row">
+    <td data-label="#"></td>
+    <td colspan="8"><button class="btn-secondary add-task-trigger-btn" data-idx="${r.idx}" style="margin-left:0;">+ Add task</button></td>
+  </tr>`;
+}
+function actionRowHtml(it){
+  const ownerCell = `<span class="editable-owner" data-kind="task" data-idx="${it.taskIdx}" title="Click to edit">${it.owner}</span>`;
+  const statusCell = `<span class="editable-task-status" data-idx="${it.taskIdx}" title="Click to edit">${taskStatusPill(it.status)}</span>`;
+  const pctCell = `<div class="bar-wrap editable-pct" data-kind="task" data-idx="${it.taskIdx}" title="Click to edit"><div class="bar"><div style="width:${it.pct}%"></div></div><span class="pct-val muted">${it.pct}%</span></div>`;
+  const whatCell = `<span class="editable-what" data-idx="${it.taskIdx}" title="Click to edit">${it.what}</span>`;
+  return `<tr>
+    <td data-label="#"></td>
+    <td data-label="Client"></td>
+    <td data-label="What" style="padding-left:24px;">${whatCell}</td>
+    <td data-label="Owner">${ownerCell}</td>
+    <td data-label="Status">${statusCell}</td>
+    <td data-label="% Complete">${pctCell}</td>
+    <td class="muted" data-label="Last touched">—</td>
+    <td class="comment" data-label="Comments"><span class="editable-comment" data-kind="task" data-idx="${it.taskIdx}" title="Click to edit">${it.comment||'—'}</span></td>
+    <td data-label="Edit"><button class="btn-secondary edit-task-btn" data-idx="${it.taskIdx}" style="margin-left:0;">Edit</button></td>
+  </tr>`;
+}
+function newTaskFormHtmlForProject(r){
+  const ownerOptions = OWNERS.map(o=>`<option value="${o}">${o}</option>`).join('') + `<option value="__add__">+ Add new owner…</option>`;
+  return `<tr class="new-row" data-project-idx="${r.idx}">
+    <td data-label="#"></td>
+    <td data-label="Client"><div class="muted" style="font-size:12px;">New task for</div><div class="client">${r.client}</div></td>
+    <td data-label="What">
+      <input type="text" id="ntTask" placeholder="Task name (e.g. Design Elaboration)" style="width:100%;">
+      <select id="ntPhase" style="width:100%;margin-top:4px;" title="Which phase this task belongs to">${PHASE_NAMES.map(p=>`<option value="${p}" ${p===r.stage?'selected':''}>${p}</option>`).join('')}</select>
+    </td>
+    <td data-label="Owner">
+      <select id="ntOwner" style="width:100%;">${ownerOptions}</select>
+      <input type="text" id="ntOwnerNew" placeholder="New owner name" style="display:none;width:100%;margin-top:4px;">
+    </td>
+    <td data-label="Status"><select id="ntStatus" style="width:100%;">${TASK_STATUSES.map(s=>`<option value="${s}">${statusLabel(s)}</option>`).join('')}</select></td>
+    <td data-label="% Complete"><select id="ntPct" style="width:100%;">${[0,25,50,75,100].map(v=>`<option value="${v}">${v}%</option>`).join('')}</select></td>
+    <td data-label="Last touched">
+      <label class="muted" style="font-size:12px;display:block;">Start <input type="date" id="ntStart" value="${todayStr()}" style="width:100%;"></label>
+      <label class="muted" style="font-size:12px;display:block;margin-top:4px;">End <input type="date" id="ntEnd" style="width:100%;"></label>
+    </td>
+    <td data-label="Comments">
+      <textarea id="ntComment" placeholder="Comment (optional)" style="width:100%;min-height:38px;font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid #C8C6C4;border-radius:4px;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button id="ntSave" class="btn-primary">Save</button>
+        <button id="ntCancel" class="btn-secondary">Cancel</button>
+      </div>
+    </td>
+    <td data-label="Edit"></td>
+  </tr>`;
+}
+function saveNewTask(projIdx){
+  const taskName = document.getElementById('ntTask').value.trim();
+  let owner = document.getElementById('ntOwner').value;
+  const status = document.getElementById('ntStatus').value;
+  const pct = parseInt(document.getElementById('ntPct').value, 10);
+  const comment = document.getElementById('ntComment').value.trim();
+  if(!taskName){
+    document.getElementById('ntTask').style.borderColor = '#D13438';
+    document.getElementById('ntTask').focus();
+    return;
+  }
+  if(owner==='__add__'){
+    const newName = document.getElementById('ntOwnerNew').value.trim();
+    if(!newName){
+      document.getElementById('ntOwnerNew').style.borderColor = '#D13438';
+      document.getElementById('ntOwnerNew').focus();
+      return;
+    }
+    addOwner(newName);
+    owner = newName;
+  }
+  const proj = rows[projIdx];
+  const phase = document.getElementById('ntPhase').value;
+  const start = document.getElementById('ntStart').value || todayStr();
+  const end = document.getElementById('ntEnd').value || addDays(start, 14);
+  const newTask = {idx: tasks.length, projectIdx: proj.idx, client: proj.client, phase, task: taskName, owner, status, pct, start, end, comment, deleted:false};
+  logChange(newTask, 'Task created.');
+  tasks.push(newTask);
+  persistNewTask(newTask);
+  addingTaskFor = null;
+  showToast(`New task added: <b>${taskName}</b> for <b>${proj.client}</b>, owned by ${owner}.`);
+  render();
+}
+
+/* ---- Filter / Sort dropdowns ---- */
+function toolbarFilterSortHtml(){
+  if(active==='overview'){
+    const typeChecks = ['Lift Shaft','Extension','Renovation'].map(t=>
+      `<label class="filter-row"><input type="checkbox" class="ov-type-cb" value="${t}" ${overviewFilter.types.has(t)?'checked':''}> ${t}</label>`).join('');
+    const statusChecks = STATUS_OPTIONS.map(s=>
+      `<label class="filter-row"><input type="checkbox" class="ov-status-cb" value="${s}" ${overviewFilter.statuses.has(s)?'checked':''}> ${statusLabel(s)}</label>`).join('');
+    const filterOffCount = (3-overviewFilter.types.size)+(4-overviewFilter.statuses.size);
+    return `<div class="filter-sort-group">
+      <div class="dropdown">
+        <button class="btn-secondary" id="filterBtn">Filter${filterOffCount?` (${filterOffCount} off)`:''} ▾</button>
+        <div class="dropdown-panel" id="filterPanel" ${openDropdown==='filter'?'':'hidden'}>
+          <div class="dd-label">Job type</div>${typeChecks}
+          <div class="dropdown-divider"></div>
+          <div class="dd-label">Status</div>${statusChecks}
+        </div>
+      </div>
+      ${mobileSortHtml()}
+    </div>`;
+  }
+  if(active==='actions'){
+    const ownerChecks = OWNERS.map(o=>`
+        <div class="owner-manage-row">
+          <label class="filter-row" style="flex:1;"><input type="checkbox" class="ac-owner-cb" value="${o}" ${actionFilter.owners.has(o)?'checked':''}> ${o}</label>
+          ${o!=='Unassigned' ? `<button class="owner-remove-btn" data-owner="${o}" title="Remove ${o}">×</button>` : ''}
+        </div>`).join('');
+    const filterOnCount = (OWNERS.length-actionFilter.owners.size)+(actionFilter.showDone?1:0);
+    return `<div class="filter-sort-group">
+      <div class="dropdown">
+        <button class="btn-secondary" id="filterBtn">Filter${filterOnCount?` (${filterOnCount} on)`:''} ▾</button>
+        <div class="dropdown-panel" id="filterPanel" ${openDropdown==='filter'?'':'hidden'}>
+          <div class="dd-label">Owner</div>${ownerChecks}
+          <div class="owner-add-row">
+            <input type="text" id="ownerAddInput" class="owner-add-input" placeholder="Add owner…">
+            <button id="ownerAddBtn" class="btn-secondary">Add</button>
+          </div>
+          <div class="dropdown-divider"></div>
+          <label class="filter-row"><input type="checkbox" id="ac-showdone-cb" ${actionFilter.showDone?'checked':''}> Show completed tasks (to edit them)</label>
+        </div>
+      </div>
+    </div>`;
+  }
+  return '';
+}
+function mobileSortHtml(){
+  if(active!=='overview') return '';
+  const state = overviewSort;
+  const opts = Object.entries(OVERVIEW_COL_KEYS).map(([label,key])=>`<option value="${key}" ${state.col===key?'selected':''}>${label}</option>`).join('');
+  return `<div class="mobile-sort">
+    <select id="mobileSortKey">${opts}</select>
+    <button id="mobileSortDir" class="btn-secondary" title="Toggle sort direction">${state.dir==='asc'?'▲':'▼'}</button>
+  </div>`;
+}
+function wireFilterSortEvents(){
+  const filterBtn = document.getElementById('filterBtn');
+  if(filterBtn) filterBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openDropdown = openDropdown==='filter' ? null : 'filter'; render(); });
+
+  const mobileSortKey = document.getElementById('mobileSortKey');
+  if(mobileSortKey) mobileSortKey.addEventListener('change', (e)=>{ e.stopPropagation(); overviewSort.col = mobileSortKey.value; render(); });
+  const mobileSortDir = document.getElementById('mobileSortDir');
+  if(mobileSortDir) mobileSortDir.addEventListener('click', (e)=>{ e.stopPropagation(); overviewSort.dir = overviewSort.dir==='asc' ? 'desc' : 'asc'; render(); });
+
+  if(active==='overview'){
+    document.querySelectorAll('.ov-type-cb').forEach(cb=>cb.addEventListener('change', (e)=>{ e.stopPropagation();
+      if(cb.checked) overviewFilter.types.add(cb.value); else overviewFilter.types.delete(cb.value);
+      render();
+    }));
+    document.querySelectorAll('.ov-status-cb').forEach(cb=>cb.addEventListener('change', (e)=>{ e.stopPropagation();
+      if(cb.checked) overviewFilter.statuses.add(cb.value); else overviewFilter.statuses.delete(cb.value);
+      render();
+    }));
+  }
+  if(active==='actions'){
+    document.querySelectorAll('.ac-owner-cb').forEach(cb=>cb.addEventListener('change', (e)=>{ e.stopPropagation();
+      if(cb.checked) actionFilter.owners.add(cb.value); else actionFilter.owners.delete(cb.value);
+      render();
+    }));
+    const showDoneCb = document.getElementById('ac-showdone-cb');
+    if(showDoneCb) showDoneCb.addEventListener('change', (e)=>{ e.stopPropagation(); actionFilter.showDone = showDoneCb.checked; render(); });
+    document.querySelectorAll('.owner-remove-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+      removeOwner(b.dataset.owner);
+      render();
+    }));
+    const ownerAddBtn = document.getElementById('ownerAddBtn');
+    const ownerAddInput = document.getElementById('ownerAddInput');
+    if(ownerAddBtn) ownerAddBtn.addEventListener('click', (e)=>{ e.stopPropagation();
+      const name = ownerAddInput.value.trim();
+      if(!name){ ownerAddInput.style.borderColor = '#D13438'; ownerAddInput.focus(); return; }
+      if(addOwner(name)) showToast(`Added <b>${name}</b> as an owner.`);
+      render();
+    });
+    if(ownerAddInput) ownerAddInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); ownerAddBtn.click(); } });
+  }
+}
+document.addEventListener('click', (e)=>{
+  if(openDropdown && !e.target.closest('.dropdown')){ openDropdown = null; render(); }
+});
+
+function newRowFormHtml(){
+  return `<tr class="new-row">
+    <td data-label="#"></td>
+    <td data-label="Client">
+      <input type="text" id="nrClient" placeholder="Client name" style="width:100%;">
+    </td>
+    <td data-label="Job Type">
+      <select id="nrType" style="width:100%;">
+        <option value="Extension">Extension</option>
+        <option value="Lift Shaft">Lift Shaft</option>
+        <option value="Renovation">Renovation</option>
+      </select>
+    </td>
+    <td data-label="Quote# / Job#">
+      <input type="text" id="nrQuote" placeholder="Quote #" style="width:100%;margin-bottom:4px;">
+      <input type="text" id="nrJob" placeholder="Job #" style="width:100%;">
+    </td>
+    <td data-label="Status">
+      <select id="nrStatus" style="width:100%;">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s==='Pending'?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>
+    </td>
+    <td data-label="Current Stage">
+      <select id="nrStage" style="width:100%;">${PHASE_NAMES.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>
+    </td>
+    <td data-label="% Complete">
+      <select id="nrPct" style="width:100%;">${[0,25,50,75,100].map(v=>`<option value="${v}">${v}%</option>`).join('')}</select>
+    </td>
+    <td data-label="Last touched">
+      <label class="muted" style="font-size:12px;display:block;">Start <input type="date" id="nrStart" value="${todayStr()}" style="width:100%;"></label>
+      <label class="muted" style="font-size:12px;display:block;margin-top:4px;">End <input type="date" id="nrEnd" style="width:100%;"></label>
+    </td>
+    <td data-label="Comments">
+      <textarea id="nrComment" placeholder="Comment (optional)" style="width:100%;min-height:38px;font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid #C8C6C4;border-radius:4px;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button id="nrSave" class="btn-primary">Save</button>
+        <button id="nrCancel" class="btn-secondary">Cancel</button>
+      </div>
+    </td>
+    <td data-label="Edit"></td>
+  </tr>`;
+}
+function saveNewRow(){
+  const client = document.getElementById('nrClient').value.trim();
+  const type = document.getElementById('nrType').value;
+  const quote = document.getElementById('nrQuote').value.trim() || '—';
+  const job = document.getElementById('nrJob').value.trim() || '—';
+  const status = document.getElementById('nrStatus').value;
+  const stage = document.getElementById('nrStage').value;
+  const pct = parseInt(document.getElementById('nrPct').value, 10);
+  const comment = document.getElementById('nrComment').value.trim();
+  const start = document.getElementById('nrStart').value || todayStr();
+  const end = document.getElementById('nrEnd').value || addDays(start, 90);
+  if(!client){
+    document.getElementById('nrClient').style.borderColor = '#D13438';
+    document.getElementById('nrClient').focus();
+    return;
+  }
+  const newRow = {
+    client, type, quote, job,
+    status, stage, pct, priority:false, deleted:false,
+    modified: todayStr(), comment, start, end, liftOrdered:null, liftExpected:null,
+    siteVisit:false, clientMeeting:'N/A',
+    phases:[{name:stage, start, end, status: mapStatusToPhaseStatus(status)}]
+  };
+  newRow.idx = rows.length;
+  logChange(newRow, 'Project created.');
+  rows.push(newRow);
+  persistNewProject(newRow);
+  addingNew = false;
+  showToast(`New job added: <b>${client}</b> — starts at <b>${stage}</b>.`);
+  render();
+}
+
+/* ---- Edit-row modal: change every field for a project in one place ---- */
+const EDIT_FIELD_LABELS = {client:'Client', type:'Job Type', quote:'Quote #', job:'Job #', status:'Status', stage:'Current Stage', pct:'% Complete', priority:'Priority', start:'Start', end:'End', liftOrdered:'Lift Ordered', liftExpected:'Lift Expected', comment:'Comment', task:'Task name', phase:'Phase', owner:'Owner'};
+function diffChanges(before, after, fields){
+  const parts = [];
+  fields.forEach(f=>{
+    const a = before[f], b = after[f];
+    const av = (a===undefined||a===null||a==='') ? '—' : String(a);
+    const bv = (b===undefined||b===null||b==='') ? '—' : String(b);
+    if(av!==bv) parts.push(`${EDIT_FIELD_LABELS[f]||f}: "${av}" → "${bv}"`);
+  });
+  return parts;
+}
+
+function openEditProjectModal(idx, allowDelete){
+  if(allowDelete===undefined) allowDelete = true;
+  const row = rows[idx];
+  const before = {client:row.client, type:row.type, quote:row.quote, job:row.job, status:row.status, stage:row.stage, pct:row.pct, priority:row.priority?'Priority':'Standard', start:row.start, end:row.end, liftOrdered:row.liftOrdered, liftExpected:row.liftExpected, comment:row.comment};
+  const existing = document.getElementById('editModalOverlay');
+  if(existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'editModalOverlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal-box modal-box-lg" role="dialog" aria-modal="true">
+    <h3>Edit — ${row.client}</h3>
+    <div class="edit-grid">
+      <label>Client<input type="text" id="emClient" value="${escAttr(row.client)}"></label>
+      <label>Job Type<select id="emType">${['Extension','Lift Shaft','Renovation'].map(t=>`<option value="${t}" ${t===row.type?'selected':''}>${t}</option>`).join('')}</select></label>
+      <label>Quote #<input type="text" id="emQuote" value="${escAttr(row.quote==='—'?'':row.quote)}"></label>
+      <label>Job #<input type="text" id="emJob" value="${escAttr(row.job==='—'?'':row.job)}"></label>
+      <label>Status<select id="emStatus">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${statusLabel(s)}</option>`).join('')}</select></label>
+      <label>Current Stage<select id="emStage">${PHASE_NAMES.map(s=>`<option value="${s}" ${s===row.stage?'selected':''}>${s}</option>`).join('')}</select></label>
+      <label>% Complete<select id="emPct" ${linkedTasks(idx).length?'disabled':''}>${[0,25,50,75,100].map(v=>`<option value="${v}" ${v===row.pct?'selected':''}>${v}%</option>`).join('')}</select></label>
+      <label>Priority<select id="emPriority"><option value="false" ${!row.priority?'selected':''}>Standard</option><option value="true" ${row.priority?'selected':''}>Priority</option></select></label>
+      <label>Start<input type="date" id="emStart" value="${row.start||''}"></label>
+      <label>End<input type="date" id="emEnd" value="${row.end||''}"></label>
+      ${row.type==='Lift Shaft' ? `<label>Lift Ordered<input type="date" id="emLiftOrdered" value="${row.liftOrdered||''}"></label><label>Lift Expected<input type="date" id="emLiftExpected" value="${row.liftExpected||''}"></label>` : ''}
+    </div>
+    <label style="display:block;margin-top:12px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;">Comment<textarea id="emComment" style="width:100%;min-height:60px;font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid #C8C6C4;border-radius:4px;margin-top:4px;text-transform:none;font-weight:400;">${row.comment||''}</textarea></label>
+    <div class="history-label">Change history</div>
+    ${historyListHtml(row)}
+    <div class="modal-actions" style="margin-top:16px; justify-content:${allowDelete?'space-between':'flex-end'};">
+      ${allowDelete ? `<button class="btn-danger" id="emDelete" style="margin-left:0;">Delete project</button>` : ''}
+      <div>
+        <button class="btn-secondary" id="emCancel">Cancel</button>
+        <button class="btn-primary" id="emSave">Save changes</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  function close(){ overlay.remove(); }
+  overlay.addEventListener('mousedown', (e)=>{ if(e.target===overlay) close(); });
+  overlay.querySelector('#emCancel').addEventListener('click', close);
+  if(allowDelete){
+    overlay.querySelector('#emDelete').addEventListener('click', ()=>{
+      close();
+      showConfirmModal({
+        title: 'Delete this project?',
+        message: `Delete the project for <b>${row.client}</b>? This also removes its linked tasks from Actions and the Programme. This cannot be undone here.`,
+        confirmLabel: 'Delete project',
+        onConfirm: ()=> deleteProject(idx),
+        onCancel: ()=> render()
+      });
+    });
+  }
+  overlay.querySelector('#emSave').addEventListener('click', ()=>{
+    const client = document.getElementById('emClient').value.trim();
+    if(!client){ showToast('Client name can\'t be blank — change was not saved.'); return; }
+    row.client = client;
+    row.type = document.getElementById('emType').value;
+    row.quote = document.getElementById('emQuote').value.trim() || '—';
+    row.job = document.getElementById('emJob').value.trim() || '—';
+    row.status = document.getElementById('emStatus').value;
+    row.stage = document.getElementById('emStage').value;
+    if(!linkedTasks(idx).length) row.pct = parseInt(document.getElementById('emPct').value,10);
+    row.priority = document.getElementById('emPriority').value === 'true';
+    row.start = document.getElementById('emStart').value || row.start;
+    row.end = document.getElementById('emEnd').value || row.end;
+    if(row.type==='Lift Shaft'){
+      const lo = document.getElementById('emLiftOrdered'); const le = document.getElementById('emLiftExpected');
+      if(lo) row.liftOrdered = lo.value || null;
+      if(le) row.liftExpected = le.value || null;
+    }
+    row.comment = document.getElementById('emComment').value.trim();
+    row.modified = todayStr();
+    persistProject(idx, {...row});
+    close();
+    const after = {client:row.client, type:row.type, quote:row.quote, job:row.job, status:row.status, stage:row.stage, pct:row.pct, priority:row.priority?'Priority':'Standard', start:row.start, end:row.end, liftOrdered:row.liftOrdered, liftExpected:row.liftExpected, comment:row.comment};
+    const changes = diffChanges(before, after, ['client','type','quote','job','status','stage','pct','priority','start','end','liftOrdered','liftExpected','comment']);
+    const msg = changes.length ? `<b>${row.client}</b> — ${changes.join('; ')}` : `<b>${row.client}</b> — no changes.`;
+    notify(row, msg);
+    render();
+  });
+}
+
+/* ---- Edit-task modal: change every field for a task in one place, including its owner (existing
+   tasks — including already-Done ones surfaced via "Show completed tasks" — can be fully edited here,
+   not just via the per-cell inline editors) ---- */
+function openEditTaskModal(idx){
+  const t = tasks[idx];
+  const proj = rows[t.projectIdx];
+  const before = {task:t.task, phase:t.phase, owner:t.owner, status:t.status, pct:t.pct, start:t.start, end:t.end, comment:t.comment};
+  const existing = document.getElementById('editModalOverlay');
+  if(existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'editModalOverlay';
+  overlay.className = 'modal-overlay';
+  const ownerOptions = OWNERS.map(o=>`<option value="${o}" ${o===t.owner?'selected':''}>${o}</option>`).join('') + `<option value="__add__">+ Add new owner…</option>`;
+  overlay.innerHTML = `<div class="modal-box modal-box-lg" role="dialog" aria-modal="true">
+    <h3>Edit task — ${proj ? proj.client : t.client}</h3>
+    <div class="edit-grid">
+      <label>Task name<input type="text" id="etTask" value="${escAttr(t.task)}"></label>
+      <label>Phase<select id="etPhase">${PHASE_NAMES.map(p=>`<option value="${p}" ${p===t.phase?'selected':''}>${p}</option>`).join('')}</select></label>
+      <label>Owner
+        <select id="etOwner">${ownerOptions}</select>
+        <input type="text" id="etOwnerNew" placeholder="New owner name" style="display:none;margin-top:6px;">
+      </label>
+      <label>Status<select id="etStatus">${TASK_STATUSES.map(s=>`<option value="${s}" ${s===t.status?'selected':''}>${statusLabel(s)}</option>`).join('')}</select></label>
+      <label>% Complete<select id="etPct">${[0,25,50,75,100].map(v=>`<option value="${v}" ${v===t.pct?'selected':''}>${v}%</option>`).join('')}</select></label>
+      <label>Start<input type="date" id="etStart" value="${t.start||''}"></label>
+      <label>End<input type="date" id="etEnd" value="${t.end||''}"></label>
+    </div>
+    <label style="display:block;margin-top:12px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;">Comment<textarea id="etComment" style="width:100%;min-height:60px;font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid #C8C6C4;border-radius:4px;margin-top:4px;text-transform:none;font-weight:400;">${t.comment||''}</textarea></label>
+    <div class="history-label">Change history</div>
+    ${historyListHtml(t)}
+    <div class="modal-actions" style="margin-top:16px; justify-content:space-between;">
+      <button class="btn-danger" id="etDelete" style="margin-left:0;">Delete task</button>
+      <div>
+        <button class="btn-secondary" id="etCancel">Cancel</button>
+        <button class="btn-primary" id="etSave">Save changes</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  function close(){ overlay.remove(); }
+  overlay.addEventListener('mousedown', (e)=>{ if(e.target===overlay) close(); });
+  overlay.querySelector('#etCancel').addEventListener('click', close);
+  overlay.querySelector('#etOwner').addEventListener('change', ()=>{
+    const isAdd = overlay.querySelector('#etOwner').value==='__add__';
+    const newInp = overlay.querySelector('#etOwnerNew');
+    newInp.style.display = isAdd ? 'block' : 'none';
+    if(isAdd) newInp.focus();
+  });
+  overlay.querySelector('#etStatus').addEventListener('change', ()=>{
+    overlay.querySelector('#etPct').value = statusDefaultPct(overlay.querySelector('#etStatus').value);
+  });
+  overlay.querySelector('#etDelete').addEventListener('click', ()=>{
+    close();
+    showConfirmModal({
+      title: 'Delete this task?',
+      message: `Delete <b>${t.task}</b> for <b>${t.client}</b> (owned by ${t.owner})? This also removes it from the Programme. This cannot be undone here.`,
+      confirmLabel: 'Delete task',
+      onConfirm: ()=> deleteTask(idx),
+      onCancel: ()=> render()
+    });
+  });
+  overlay.querySelector('#etSave').addEventListener('click', ()=>{
+    const taskName = overlay.querySelector('#etTask').value.trim();
+    if(!taskName){ showToast('Task name can\'t be blank — change was not saved.'); return; }
+    let owner = overlay.querySelector('#etOwner').value;
+    if(owner==='__add__'){
+      const newName = overlay.querySelector('#etOwnerNew').value.trim();
+      if(!newName){ overlay.querySelector('#etOwnerNew').style.borderColor = '#D13438'; overlay.querySelector('#etOwnerNew').focus(); return; }
+      addOwner(newName);
+      owner = newName;
+    }
+    t.task = taskName;
+    t.phase = overlay.querySelector('#etPhase').value;
+    t.owner = owner;
+    t.status = overlay.querySelector('#etStatus').value;
+    t.pct = parseInt(overlay.querySelector('#etPct').value,10);
+    t.start = overlay.querySelector('#etStart').value || t.start;
+    t.end = overlay.querySelector('#etEnd').value || t.end;
+    t.comment = overlay.querySelector('#etComment').value.trim();
+    persistTask(idx, {...t});
+    close();
+    const after = {task:t.task, phase:t.phase, owner:t.owner, status:t.status, pct:t.pct, start:t.start, end:t.end, comment:t.comment};
+    const changes = diffChanges(before, after, ['task','phase','owner','status','pct','start','end','comment']);
+    const msg = changes.length ? `<b>${t.task}</b> (${t.client}) — ${changes.join('; ')}` : `<b>${t.task}</b> — no changes.`;
+    notify(t, msg);
+    render();
+  });
+}
+
+const OVERVIEW_COL_KEYS = {
+  'Client':'client', 'Job Type':'type', 'Status':'status', 'Current Stage':'stage',
+  '% Complete':'pct', 'Last touched':'modified'
+};
+/* Fixed % widths per view so expanding an Actions row (which reveals wider task cells)
+   can never resize the columns above/below it — table-layout:fixed only holds steady
+   when every <th> carries an explicit width. */
+const COL_WIDTHS = {
+  overview: {'#':'40px','Client':'160px','Job Type':'100px','Quote# / Job#':'110px','Status':'110px','Current Stage':'190px','% Complete':'100px','Last touched':'130px','Comments':'160px','':'60px'},
+  actions:  {'#':'40px','Client':'150px','What':'190px','Owner':'140px','Status':'140px','% Complete':'90px','Last touched':'130px','Comments':'170px','':'60px'},
+};
+function theadHtml(v){
+  const keyMap = active==='overview' ? OVERVIEW_COL_KEYS : null;
+  const state = overviewSort;
+  const widths = COL_WIDTHS[active];
+  return v.cols.map(c=>{
+    const key = keyMap ? keyMap[c] : null;
+    const widthAttr = widths && widths[c] ? ` style="width:${widths[c]};"` : '';
+    if(!key) return `<th${widthAttr}>${c}</th>`;
+    const isActive = state.col===key;
+    const arrow = isActive ? (state.dir==='asc' ? ' ▲' : ' ▼') : '';
+    return `<th class="sortable-th${isActive?' active-sort':''}" data-sort-key="${key}"${widthAttr} title="Click to sort">${c}${arrow}</th>`;
+  }).join('');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function showConfirmModal({ title, message, confirmLabel='Delete', onConfirm, onCancel }){
+  const existing = document.getElementById('modalOverlay');
+  if(existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'modalOverlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal-box" role="alertdialog" aria-modal="true">
+    <h3>${title}</h3>
+    <p>${message}</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="modalCancelBtn" style="margin-left:0;">Cancel</button>
+      <button class="btn-danger" id="modalConfirmBtn">${confirmLabel}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  function close(){ overlay.remove(); }
+  overlay.addEventListener('mousedown', (e)=>{ if(e.target===overlay){ close(); if(onCancel) onCancel(); } });
+  overlay.querySelector('#modalCancelBtn').addEventListener('click', ()=>{ close(); if(onCancel) onCancel(); });
+  overlay.querySelector('#modalConfirmBtn').addEventListener('click', ()=>{ close(); onConfirm(); });
+  overlay.querySelector('#modalConfirmBtn').focus();
+}
+
+/* ---- Gantt (weekly) ---- */
+function isoWeekNumber(dt){
+  const d = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+  const dayNum = (d.getUTCDay()+6)%7;
+  d.setUTCDate(d.getUTCDate()-dayNum+3);
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(),0,4));
+  const fDayNum = (firstThursday.getUTCDay()+6)%7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate()-fDayNum+3);
+  return 1 + Math.round((d-firstThursday)/(7*86400000));
+}
+function mondayOf(dt){ const d=new Date(dt); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+function buildWeeks(){
+  const weeks=[]; let cur=mondayOf(RANGE_START);
+  while(cur < RANGE_END){
+    weeks.push({date:new Date(cur), weekNo:isoWeekNumber(cur), month:cur.toLocaleDateString('en-AU',{month:'short'})});
+    cur = new Date(cur); cur.setDate(cur.getDate()+7);
+  }
+  return weeks;
+}
+const WEEKS = buildWeeks();
+const TIMELINE_WIDTH = WEEKS.length*WEEK_WIDTH;
+function xPos(dstr){ if(!dstr) return 0; const days=(new Date(dstr)-WEEKS[0].date)/86400000; return Math.max(0,(days/7)*WEEK_WIDTH); }
+function monthBands(){
+  const bands=[]; let i=0;
+  while(i<WEEKS.length){
+    let j=i; while(j<WEEKS.length && WEEKS[j].month===WEEKS[i].month) j++;
+    bands.push({month:WEEKS[i].month, x:i*WEEK_WIDTH, width:(j-i)*WEEK_WIDTH});
+    i=j;
+  }
+  return bands;
+}
+
+function ganttHeaderHtml(){
+  let html = `<div class="gantt-row month-row header-row"><div class="gantt-num">#</div><div class="gantt-jobtype">Type</div><div class="gantt-label"><span class="gantt-label-title">Project</span><div class="gantt-resize-handle" title="Drag to resize this column"></div></div><div class="gantt-timeline" style="width:${TIMELINE_WIDTH}px;">`;
+  html += monthBands().map(b=>`<div class="month-band" style="left:${b.x}px;width:${b.width}px;">${b.month}</div>`).join('');
+  html += `</div></div>`;
+  html += `<div class="gantt-row week-header-row header-row"><div class="gantt-num"></div><div class="gantt-jobtype"></div><div class="gantt-label"></div><div class="gantt-timeline" style="width:${TIMELINE_WIDTH}px;">`;
+  html += WEEKS.map((w,i)=>`<div class="week-col" style="left:${i*WEEK_WIDTH}px;width:${WEEK_WIDTH}px;">Wk ${w.weekNo}</div>`).join('');
+  html += `</div></div>`;
+  return html;
+}
+
+const LINE_H = 36;
+
+/* Every bar's own label always carries its date range (in a separate span the drag handler can
+   live-update), so the date is never lost to truncation in the left column and always matches
+   whatever the bar currently shows — including mid-drag, before the change is even committed. */
+function barDateSpan(start, end){
+  return `<span class="bar-date-text" data-datespan="1">${fmt(start)} → ${fmt(end)}</span>`;
+}
+function mainBarHtml(r, lineIdx){
+  const top = lineIdx*LINE_H+4, h = LINE_H-8;
+  const overallLeft = xPos(r.start), overallRight = xPos(r.end);
+  const overallWidth = Math.max(overallRight-overallLeft, 10);
+  if(r.liftOrdered && r.liftExpected){
+    const waitLeft = xPos(r.liftOrdered), waitRight = xPos(r.liftExpected);
+    const waitWidth = Math.max(waitRight-waitLeft,10);
+    const activeLeft = waitRight, activeWidth = Math.max(overallRight-waitRight,10);
+    const activeCls = barStatusClass(currentPhase(r) ? currentPhase(r).status : r.status, r.end);
+    return `<div class="gantt-bar gantt-drag-bar seg-wait" data-idx="${r.idx}" data-start-field="liftOrdered" data-end-field="liftExpected" style="top:${top}px;height:${h}px;left:${waitLeft}px;width:${waitWidth}px;"><span class="seg-label">Procurement Lead Time · ${barDateSpan(r.liftOrdered, r.liftExpected)}</span></div>`
+      + `<div class="gantt-bar gantt-drag-bar ${activeCls}" data-idx="${r.idx}" data-start-field="liftExpected" data-end-field="end" style="top:${top}px;height:${h}px;left:${activeLeft}px;width:${activeWidth}px;"><span class="seg-label">${r.stage} · ${barDateSpan(r.liftExpected, r.end)}</span></div>`;
+  }
+  /* Same status source as the Detailed phase bars (currentPhase), so Compact and Detailed can
+     never show two different colours for the same phase — falls back to the project Status field
+     only for the rare project with no phases[] recorded yet (now the exact same 4 values, so no
+     remapping needed). Overdue (end date passed, not Completed) overrides the status colour with red. */
+  const cur = currentPhase(r);
+  const effStatus = cur ? cur.status : r.status;
+  /* Overdue check uses r.end, not the phase's own end date — the bar itself is drawn to r.start/
+     r.end (the project's overall span), so redness must follow whatever the bar visually covers. */
+  const cls = barStatusClass(effStatus, r.end);
+  return `<div class="gantt-bar gantt-drag-bar ${cls}" data-idx="${r.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${overallLeft}px;width:${overallWidth}px;"><span class="seg-label">${r.stage} · ${barDateSpan(r.start, r.end)}</span></div>`;
+}
+function phaseBarHtml(r, p, lineIdx){
+  const top = lineIdx*LINE_H+4, h = LINE_H-8;
+  const pLeft = xPos(p.start), pRight = xPos(p.end);
+  const pWidth = Math.max(pRight-pLeft, 10);
+  const cls = barStatusClass(p.status, p.end);
+  const pidx = r.phases.indexOf(p);
+  return `<div class="gantt-bar gantt-drag-bar gantt-phase-bar ${cls}" data-idx="${r.idx}" data-phase-idx="${pidx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${pLeft}px;width:${pWidth}px;"><span class="seg-label">${p.name} · ${barDateSpan(p.start, p.end)}</span></div>`;
+}
+function taskBarHtml(t, lineIdx){
+  /* Deliberately thinner than a phase bar — some linked tasks carry names like "Feasibility
+     Assessment" or "Working Drawings" (imported from the old task list), which would otherwise
+     look exactly like a phase bar and make it seem like Project Overview's phase list is missing
+     entries. This bar is a task, never a phase, regardless of its name. */
+  const h = LINE_H-18, top = lineIdx*LINE_H + (LINE_H-h)/2;
+  const tLeft = xPos(t.start), tRight = xPos(t.end);
+  const tWidth = Math.max(tRight-tLeft, 10);
+  return `<div class="gantt-bar gantt-drag-bar gantt-task-bar ${barStatusClass(t.status, t.end)}" data-task-idx="${t.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${tLeft}px;width:${tWidth}px;"><span class="seg-label">${t.task} — ${t.owner} · ${shortStage(t.phase)} · ${barDateSpan(t.start, t.end)}</span></div>`;
+}
+
+function ganttRowHtml(r, mode, num){
+  const detailed = mode==='detailed';
+  const myPhases = detailed ? [...(r.phases||[])].sort((a,b)=> phaseNum(a.name)-phaseNum(b.name)) : [];
+  const myTasks = detailed ? tasks.filter(t=>!t.deleted && t.projectIdx===r.idx).sort((a,b)=> new Date(a.start||0)-new Date(b.start||0)) : [];
+  const usingPhaseStack = detailed && myPhases.length>0;
+  /* Phase and task bars stack directly from line 0 — no separate client-name-only header line
+     above them. The client name instead rides on the first phase's own line (see phaseLabelLines
+     below), so every line in the label column carries a bar next to it and no row height goes to
+     waste. */
+  const lineCount = usingPhaseStack ? (myPhases.length + myTasks.length) : (1 + (detailed?myTasks.length:0));
+  const rowHeight = Math.max(lineCount,1)*LINE_H;
+
+  let bars = '';
+  if(usingPhaseStack){
+    myPhases.forEach((p,i)=>{ bars += phaseBarHtml(r, p, i); });
+    myTasks.forEach((t,i)=>{ bars += taskBarHtml(t, myPhases.length+i); });
+  } else {
+    bars += mainBarHtml(r, 0);
+    if(detailed) myTasks.forEach((t,i)=>{ bars += taskBarHtml(t, 1+i); });
+  }
+
+  /* Dates are never repeated in this column — every bar already carries its own start/end via
+     barDateSpan, so the label text only needs to say WHAT each line is (client, phase, task). */
+  const phaseLabelLines = usingPhaseStack ? myPhases.map((p,i)=>`<div class="task-label-line" style="height:${LINE_H}px; display:flex; align-items:center;">
+      ${i===0
+        ? `<span class="client" style="font-size:13px;" title="${r.client}">${r.client}</span>`
+        : `<span class="gantt-dates task-dates" title="${p.name}"><b>${p.name}</b></span>`}
+    </div>`).join('') : '';
+  const taskLabelLines = detailed ? myTasks.map(t=>`<div class="task-label-line" style="height:${LINE_H}px; display:flex; align-items:center;">
+      <span class="gantt-dates task-dates" title="Task — ${t.task} (${shortStage(t.phase)}), owned by ${t.owner}"><b>${t.task} — ${t.owner} · ${shortStage(t.phase)}</b></span>
+    </div>`).join('') : '';
+
+  /* Subtle zebra shading per project (not per phase/task line within it) so one project's block
+     is easy to tell apart from the next when rows stack up. */
+  const rowBg = (num%2===0) ? '#FAFAF9' : '#FFFFFF';
+  const headerLine = usingPhaseStack ? '' : `<div style="height:${LINE_H}px; display:flex; flex-direction:column; justify-content:center;">
+        <div class="client">${r.client}</div>
+      </div>`;
+  return `<div class="gantt-row" style="height:${rowHeight}px; background:${rowBg};">
+    <div class="gantt-num" style="height:${rowHeight}px; background:${rowBg};">${num}</div>
+    <div class="gantt-jobtype" style="height:${rowHeight}px; background:${rowBg};" title="${r.type}">${r.type}</div>
+    <div class="gantt-label" style="height:${rowHeight}px; background:${rowBg}; justify-content:${(phaseLabelLines||taskLabelLines)?'flex-start':'center'};">
+      ${headerLine}
+      ${phaseLabelLines}${taskLabelLines}
+    </div>
+    <div class="gantt-timeline" style="width:${TIMELINE_WIDTH}px;height:${rowHeight}px;">${bars}</div>
+  </div>`;
+}
+
+function computeWeeklyLoad(){
+  const activeRows = rows.filter(r=>!r.deleted && r.start && r.end);
+  return WEEKS.map(w=>{
+    const wStart = w.date.getTime();
+    const wEnd = wStart + 7*86400000 - 1;
+    return activeRows.filter(r=>{
+      const s = new Date(r.start).getTime();
+      const en = new Date(r.end).getTime();
+      return s <= wEnd && en >= wStart;
+    }).length;
+  });
+}
+function workloadScale(loads){
+  const maxLoad = Math.max(...loads, 1);
+  const yMax = Math.max(maxLoad, 1);
+  const chartH = 220, padTop = 14, padBottom = 10;
+  const plotH = chartH - padTop - padBottom;
+  const yFor = v => padTop + plotH - (v/yMax)*plotH;
+  return { yMax, chartH, padTop, padBottom, plotH, yFor };
+}
+function workloadChartHtml(loads, scale){
+  const { chartH, yFor, yMax } = scale;
+  const cx = i => i*WEEK_WIDTH + WEEK_WIDTH/2;
+  const points = loads.map((v,i)=>`${cx(i)},${yFor(v).toFixed(1)}`).join(' ');
+  const areaPoints = `${cx(0)},${yFor(0).toFixed(1)} ${points} ${cx(loads.length-1)},${yFor(0).toFixed(1)}`;
+  let grid = '';
+  for(let v=0; v<=yMax; v++){
+    const y = yFor(v).toFixed(1);
+    grid += `<line x1="0" y1="${y}" x2="${TIMELINE_WIDTH}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+  }
+  const dots = loads.map((v,i)=>`<circle cx="${cx(i)}" cy="${yFor(v).toFixed(1)}" r="2.6" fill="var(--sp-blue)"><title>Wk ${WEEKS[i].weekNo}: ${v} active project${v===1?'':'s'}</title></circle>`).join('');
+  const todayX = xPos(todayStr());
+  return `<div class="workload-chart-wrap">
+    <svg width="${TIMELINE_WIDTH}" height="${chartH}" style="display:block;">
+      ${grid}
+      <polygon points="${areaPoints}" fill="rgba(0,120,212,0.08)"/>
+      <polyline points="${points}" fill="none" stroke="var(--sp-blue)" stroke-width="2"/>
+      ${dots}
+      <line x1="${todayX}" y1="0" x2="${todayX}" y2="${chartH}" stroke="#D13438" stroke-width="1.5" stroke-dasharray="4,3"/>
+    </svg>
+  </div>`;
+}
+function workloadAxisHtml(scale){
+  const { yMax, yFor } = scale;
+  let labels = '';
+  for(let v=0; v<=yMax; v++){
+    const y = yFor(v);
+    labels += `<div style="position:absolute; left:0; right:6px; top:${(y-7).toFixed(1)}px; text-align:right; font-size:10px; color:var(--text-muted);">${v}</div>`;
+  }
+  return `<div style="position:relative; height:100%; width:100%;">${labels}</div>`;
+}
+
+function ganttHtml(){
+  const todayX = xPos(todayStr());
+  if(ganttMode==='workload'){
+    const WLW = 96;
+    const labelStyle = `flex:0 0 ${WLW}px; width:${WLW}px; left:0;`;
+    let html = `<div class="gantt-legend">
+      <div class="legend-item"><span class="swatch" style="background:var(--sp-blue)"></span>Active projects running that week (by start–end dates)</div>
+      <div class="legend-item"><span style="border-left:2px dashed #D13438;height:10px;display:inline-block;"></span>Today</div>
+    </div>`;
+    html += `<div class="gantt-scroll"><div class="gantt-scroll-content" style="width:${WLW+TIMELINE_WIDTH}px;">`;
+    html += `<div class="gantt-row month-row header-row"><div class="gantt-label" style="${labelStyle}font-weight:600;font-size:12px;color:var(--text-muted);">Workload</div><div class="gantt-timeline" style="width:${TIMELINE_WIDTH}px;">`
+      + monthBands().map(b=>`<div class="month-band" style="left:${b.x}px;width:${b.width}px;">${b.month}</div>`).join('') + `</div></div>`;
+    html += `<div class="gantt-row week-header-row header-row"><div class="gantt-label" style="${labelStyle}"></div><div class="gantt-timeline" style="width:${TIMELINE_WIDTH}px;">`
+      + WEEKS.map((w,i)=>`<div class="week-col" style="left:${i*WEEK_WIDTH}px;width:${WEEK_WIDTH}px;">Wk ${w.weekNo}</div>`).join('') + `</div></div>`;
+    const workloadLoads = computeWeeklyLoad();
+    const workloadScaleVal = workloadScale(workloadLoads);
+    html += `<div class="gantt-row" style="height:220px;">
+      <div class="gantt-label" style="${labelStyle}align-items:stretch; padding:8px 0 8px 10px;">
+        <div class="muted" style="font-size:10.5px; margin-bottom:4px; line-height:1.3;">Active projects</div>
+        <div style="flex:1; position:relative; min-height:0;">${workloadAxisHtml(workloadScaleVal)}</div>
+      </div>
+      <div class="gantt-timeline" style="width:${TIMELINE_WIDTH}px;height:220px;">${workloadChartHtml(workloadLoads, workloadScaleVal)}</div>
+    </div>`;
+    html += `<div class="today-line" style="left:${WLW+todayX}px;"></div><div class="today-tag" style="left:${WLW+todayX}px;">Today</div>`;
+    html += `</div></div>`;
+    return html;
+  }
+  let html = `<div class="gantt-legend">
+    <div class="legend-item"><span class="swatch" style="background:var(--sp-blue)"></span>In Progress</div>
+    <div class="legend-item"><span class="swatch" style="background:#FFB900"></span>Pending</div>
+    <div class="legend-item"><span class="swatch seg-hold" style="width:14px;height:9px;"></span>Standby/On Hold</div>
+    <div class="legend-item"><span class="swatch" style="background:#5EA35E"></span>Completed</div>
+    <div class="legend-item"><span class="swatch seg-wait" style="width:14px;height:9px;"></span>Procurement Lead Time</div>
+    <div class="legend-item"><span class="swatch" style="background:#D13438"></span>Overdue (end date passed, not Completed)</div>
+    <div class="legend-item"><span style="border-left:2px dashed #D13438;height:10px;display:inline-block;"></span>Today</div>
+  </div>`;
+  html += `<div class="gantt-scroll"><div class="gantt-scroll-content" style="width:${30+84+220+TIMELINE_WIDTH}px;">`;
+  html += ganttHeaderHtml();
+  const orderedGroups = orderProjects(rows.filter(r=>!r.deleted));
+  let gn = 1;
+  orderedGroups.forEach(g=> g.rows.forEach(r=>{ html += ganttRowHtml(r, ganttMode, gn++); }));
+  html += `<div class="today-line" style="left:${30+84+220+todayX}px;"></div><div class="today-tag" style="left:${30+84+220+todayX}px;">Today</div>`;
+  html += `</div></div>`;
+  return html;
+}
+
+let active = 'overview';
+let addingNew = false;
+let ganttMode = 'compact';
+let ganttLabelWidth = 220;
+const PCT_STEPS = [0,25,50,75,100];
+function nearestStep(val){ return PCT_STEPS.reduce((a,b)=>Math.abs(b-val)<Math.abs(a-val)?b:a); }
+
+function render(){
+  editingField = false;
+  const syncStatus = document.getElementById('syncStatus');
+  if(syncStatus) updateSyncStatus();
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = Object.entries(views).map(([key,v])=>
+    `<div class="tab ${key===active?'active':''}" data-key="${key}">${v.label}<span class="count">${computeCount(key)}</span></div>`
+  ).join('');
+  tabsEl.querySelectorAll('.tab').forEach(el=>el.addEventListener('click',()=>{active=el.dataset.key; addingNew=false; expandedActionsProject=new Set(); addingTaskFor=null; openDropdown=null; render();}));
+
+  const v = views[active];
+  document.getElementById('viewDesc').innerHTML = v.desc + (v.hint ? ` <span class="hint">${v.hint}</span>` : '');
+
+  const insightBox = document.getElementById('insightBox');
+  if(active==='actions'){
+    const stale = rows.filter(r=>!r.deleted && daysAgo(r.modified)>=7 && r.status!=='Completed');
+    if(stale.length){
+      insightBox.innerHTML = `Needs input to stay current: <b>${stale.length}</b> project${stale.length>1?'s':''} not touched in 7+ days. A quick Stage, % Complete or Comment update resets the clock.`;
+    } else {
+      insightBox.innerHTML = `Nothing overdue — every active job has been touched in the last 7 days.`;
+    }
+    insightBox.style.display = 'block';
+  } else {
+    insightBox.style.display = 'none';
+  }
+
+  if(v.isGantt){
+    document.getElementById('tableCard').style.display='none';
+    const gc = document.getElementById('ganttCard');
+    const prevScroll = gc.querySelector('.gantt-scroll');
+    const scrollLeft = prevScroll ? prevScroll.scrollLeft : null;
+    gc.style.display='block';
+    gc.style.setProperty('--gantt-label-w', ganttLabelWidth+'px');
+    gc.innerHTML = ganttHtml();
+    if(scrollLeft !== null){
+      const newScroll = gc.querySelector('.gantt-scroll');
+      if(newScroll) newScroll.scrollLeft = scrollLeft;
+    }
+    const resizeHandle = gc.querySelector('.gantt-resize-handle');
+    if(resizeHandle) resizeHandle.addEventListener('mousedown', (e)=>{
+      e.preventDefault();
+      const startX = e.clientX, startW = ganttLabelWidth;
+      resizeHandle.classList.add('dragging');
+      function onMove(ev){
+        ganttLabelWidth = Math.max(120, Math.min(420, startW + (ev.clientX - startX)));
+        gc.style.setProperty('--gantt-label-w', ganttLabelWidth+'px');
+      }
+      function onUp(){
+        resizeHandle.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+    document.getElementById('foot').innerHTML = ganttMode==='workload'
+      ? `<b>Note:</b> counts how many projects are running at once each week, based on their start/end dates — use it to see busy periods before committing to a new job. Switch back to Compact or Detailed to edit dates and status.`
+      : `<b>Note:</b> columns are calendar weeks — scroll right for later dates. Same project order as Project Overview. Detailed mode shows each project's phase history stacked chronologically, oldest on top.`;
+  } else {
+    document.getElementById('ganttCard').style.display='none';
+    document.getElementById('tableCard').style.display='block';
+    document.getElementById('theadRow').innerHTML = theadHtml(v);
+    document.getElementById('tbody').innerHTML =
+      (active==='overview' && addingNew ? newRowFormHtml() : '') +
+      v.build().join('');
+    document.querySelectorAll('.sortable-th').forEach(th=>th.addEventListener('click', ()=>{
+      const key = th.dataset.sortKey;
+      if(overviewSort.col===key) overviewSort.dir = overviewSort.dir==='asc' ? 'desc' : 'asc';
+      else { overviewSort.col = key; overviewSort.dir = 'asc'; }
+      render();
+    }));
+    document.getElementById('foot').innerHTML = active==='actions'
+      ? `<b>Note:</b> items are grouped under their project, in the same order as Project Overview — expand a project's ▸ to see them and add a new task.`
+      : `<b>Note:</b> "Last touched" updates automatically whenever a row is edited.`;
+
+    if(active==='overview' && addingNew){
+      document.getElementById('nrSave').addEventListener('click', saveNewRow);
+      document.getElementById('nrCancel').addEventListener('click', ()=>{ addingNew=false; render(); });
+      document.getElementById('nrClient').focus();
+    }
+    if(active==='overview'){
+      document.querySelectorAll('.phase-toggle-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+        const idx = parseInt(b.dataset.idx,10);
+        if(expandedOverview.has(idx)) expandedOverview.delete(idx); else expandedOverview.add(idx);
+        render();
+      }));
+      document.querySelectorAll('.edit-row-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+        openEditProjectModal(parseInt(b.dataset.idx,10));
+      }));
+      /* Guard the "+ Add phase" mini-form the same way as every other inline editor: while any of
+         its fields has focus, the background sync must not rebuild the table underneath it — that
+         is exactly what made half-filled phase edits vanish if the PM wasn't fast enough. */
+      document.querySelectorAll('.phase-add-row select, .phase-add-row input').forEach(el=>{
+        el.addEventListener('focus', ()=>{ editingField = true; });
+        el.addEventListener('input', ()=>{ editingField = true; });
+        el.addEventListener('change', ()=>{ editingField = true; });
+      });
+      document.querySelectorAll('.phase-add-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+        const idx = parseInt(b.dataset.idx,10);
+        const row = rows[idx];
+        const nameSel = document.querySelector(`.phase-add-name[data-idx="${idx}"]`);
+        const startInp = document.querySelector(`.phase-add-start[data-idx="${idx}"]`);
+        const endInp = document.querySelector(`.phase-add-end[data-idx="${idx}"]`);
+        const statusSel = document.querySelector(`.phase-add-status[data-idx="${idx}"]`);
+        if(!nameSel) return;
+        const phase = { name:nameSel.value, start:startInp.value||todayStr(), end:endInp.value||addDays(startInp.value||todayStr(),30), status:statusSel.value };
+        row.phases = row.phases || [];
+        row.phases.push(phase);
+        if(phase.status==='In Progress'){ row.stage = phase.name; row.modified = todayStr(); }
+        persistProject(idx, {phases: row.phases, stage: row.stage});
+        notify(row, `<b>${row.client}</b> — added ${phase.name} (${phase.status}, ${fmt(phase.start)} → ${fmt(phase.end)}).`);
+        render();
+      }));
+      document.querySelectorAll('.phase-remove-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+        const idx = parseInt(b.dataset.idx,10);
+        const pidx = parseInt(b.dataset.pidx,10);
+        const row = rows[idx];
+        const removed = row.phases.splice(pidx,1)[0];
+        persistProject(idx, {phases: row.phases});
+        notify(row, `Removed <b>${removed.name}</b> from <b>${row.client}</b>.`);
+        render();
+      }));
+    }
+    if(active==='actions'){
+      document.querySelectorAll('.action-expand-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+        const idx = parseInt(b.dataset.idx,10);
+        if(expandedActionsProject.has(idx)){ expandedActionsProject.delete(idx); if(addingTaskFor===idx) addingTaskFor=null; }
+        else expandedActionsProject.add(idx);
+        render();
+      }));
+      document.querySelectorAll('.add-task-trigger-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+        addingTaskFor = parseInt(b.dataset.idx,10);
+        render();
+      }));
+      document.querySelectorAll('.edit-task-btn').forEach(b=>b.addEventListener('click', (e)=>{ e.stopPropagation();
+        openEditTaskModal(parseInt(b.dataset.idx,10));
+      }));
+      document.querySelectorAll('tr.new-row[data-project-idx]').forEach(trEl=>{
+        const pIdx = parseInt(trEl.dataset.projectIdx,10);
+        trEl.querySelector('#ntSave').addEventListener('click', ()=>saveNewTask(pIdx));
+        trEl.querySelector('#ntCancel').addEventListener('click', ()=>{ addingTaskFor=null; render(); });
+        trEl.querySelector('#ntOwner').addEventListener('change', ()=>{
+          const isAdd = trEl.querySelector('#ntOwner').value==='__add__';
+          const ntOwnerNew = trEl.querySelector('#ntOwnerNew');
+          ntOwnerNew.style.display = isAdd ? 'block' : 'none';
+          if(isAdd) ntOwnerNew.focus();
+        });
+        trEl.querySelector('#ntStatus').addEventListener('change', ()=>{
+          trEl.querySelector('#ntPct').value = statusDefaultPct(trEl.querySelector('#ntStatus').value);
+        });
+        trEl.querySelector('#ntTask').focus();
+      });
+    }
+  }
+
+  const toolbar = document.getElementById('toolbar');
+  let rightHtml = '';
+  if(active==='overview' && !addingNew) rightHtml = `<button id="addNewBtn" class="btn-primary">+ New</button>`;
+  else if(active==='actions'){
+    const idxs = actionsProjectIdxs();
+    const allOpen = idxs.length>0 && idxs.every(idx=>expandedActionsProject.has(idx));
+    rightHtml = `<button id="expandAllBtn" class="btn-secondary">${allOpen ? 'Collapse all' : 'Expand all'}</button>`;
+  }
+  else if(active==='gantt') rightHtml = `<div class="seg-toggle">
+      <button class="seg-btn ${ganttMode==='compact'?'active':''}" data-mode="compact">Compact</button>
+      <button class="seg-btn ${ganttMode==='detailed'?'active':''}" data-mode="detailed">Detailed</button>
+      <button class="seg-btn ${ganttMode==='workload'?'active':''}" data-mode="workload">Workload</button>
+    </div>`;
+  toolbar.innerHTML = `<div class="toolbar-left">${toolbarFilterSortHtml()}</div><div class="toolbar-right">${rightHtml}</div>`;
+
+  if(active==='overview' && !addingNew) document.getElementById('addNewBtn').addEventListener('click', ()=>{ addingNew=true; render(); });
+  else if(active==='actions') document.getElementById('expandAllBtn').addEventListener('click', ()=>{
+    const idxs = actionsProjectIdxs();
+    const allOpen = idxs.length>0 && idxs.every(idx=>expandedActionsProject.has(idx));
+    expandedActionsProject = allOpen ? new Set() : new Set(idxs);
+    if(allOpen) addingTaskFor = null;
+    render();
+  });
+  else if(active==='gantt') toolbar.querySelectorAll('.seg-btn').forEach(b=>b.addEventListener('click', ()=>{ ganttMode=b.dataset.mode; render(); }));
+
+  if(active==='overview' || active==='actions') wireFilterSortEvents();
+}
+
+function stageOptionsFor(){ return PHASE_NAMES; }
+
+function handleGridClick(e){
+  const pctWrap = e.target.closest('.editable-pct');
+  if(pctWrap){
+    if(pctWrap.querySelector('select')) return;
+    const kind = pctWrap.dataset.kind || 'project';
+    const idx = pctWrap.dataset.idx;
+    const target = kind==='task' ? tasks[idx] : rows[idx];
+    const label = kind==='task' ? `${target.owner}: ${target.task}` : target.client;
+    const current = nearestStep(target.pct);
+    pctWrap.innerHTML = `<select class="pct-input">${PCT_STEPS.map(v=>`<option value="${v}" ${v===current?'selected':''}>${v}%</option>`).join('')}</select>`;
+    const sel = pctWrap.querySelector('select');
+    sel.focus();
+    editingField = true;
+    let committed = false;
+    function commit(v){
+      committed = true;
+      target.pct = v;
+      if(kind==='project'){ target.modified = todayStr(); persistProject(idx, {pct:v, modified:target.modified}); }
+      else persistTask(idx, {pct:v});
+      notify(target, `<b>${label}</b> saved at ${v}%.`);
+      render();
+    }
+    sel.addEventListener('change', ()=>commit(parseInt(sel.value,10)));
+    sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const ownerWrap = e.target.closest('.editable-owner');
+  if(ownerWrap){
+    if(ownerWrap.querySelector('select') || ownerWrap.querySelector('input')) return;
+    const idx = ownerWrap.dataset.idx;
+    const target = tasks[idx];
+    const label = `${target.task} (${target.client})`;
+    const opts = OWNERS.map(o=>`<option value="${o}" ${o===target.owner?'selected':''}>${o}</option>`).join('') + `<option value="__add__">+ Add new owner…</option>`;
+    ownerWrap.innerHTML = `<select class="stage-input owner-select">${opts}</select>`;
+    const sel = ownerWrap.querySelector('select');
+    sel.focus();
+    editingField = true;
+    let committed = false;
+    function finish(name){
+      committed = true;
+      target.owner = name;
+      persistTask(idx, {owner:name});
+      notify(target, `<b>${label}</b> — owner set to ${name}.`);
+      render();
+    }
+    sel.addEventListener('change', ()=>{
+      if(sel.value==='__add__'){
+        committed = true;
+        ownerWrap.innerHTML = `<input type="text" class="date-input owner-new-input" placeholder="New owner name">`;
+        const inp = ownerWrap.querySelector('input');
+        inp.focus();
+        editingField = true;
+        inp.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); inp.blur(); } });
+        inp.addEventListener('blur', ()=>{
+          const name = inp.value.trim();
+          if(name){ addOwner(name); finish(name); } else { render(); }
+        });
+      } else {
+        finish(sel.value);
+      }
+    });
+    sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const phaseStatusWrap = e.target.closest('.editable-phase-status');
+  if(phaseStatusWrap){
+    if(phaseStatusWrap.querySelector('select')) return;
+    const idx = phaseStatusWrap.dataset.idx;
+    const pidx = phaseStatusWrap.dataset.pidx;
+    const row = rows[idx];
+    const phase = row.phases[pidx];
+    const opts = phaseStatusOptions().map(s=>`<option value="${s}" ${s===phase.status?'selected':''}>${statusLabel(s)}</option>`).join('');
+    phaseStatusWrap.outerHTML = `<span class="editable-phase-status" data-idx="${idx}" data-pidx="${pidx}"><select class="stage-input">${opts}</select></span>`;
+    const newWrap = document.querySelector(`.editable-phase-status[data-idx="${idx}"][data-pidx="${pidx}"]`);
+    const sel = newWrap.querySelector('select');
+    sel.focus();
+    editingField = true;
+    let committed = false;
+    function commit(v){
+      committed = true;
+      phase.status = v;
+      if(v==='In Progress'){ row.stage = phase.name; row.modified = todayStr(); }
+      persistProject(idx, {phases: row.phases, stage: row.stage});
+      notify(row, `<b>${row.client}</b> — ${phase.name} set to ${v}.`);
+      render();
+    }
+    sel.addEventListener('change', ()=>commit(sel.value));
+    sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const phaseDateWrap = e.target.closest('.editable-phase-date');
+  if(phaseDateWrap){
+    if(phaseDateWrap.querySelector('input')) return;
+    const idx = phaseDateWrap.dataset.idx;
+    const pidx = phaseDateWrap.dataset.pidx;
+    const field = phaseDateWrap.dataset.field;
+    const row = rows[idx];
+    const phase = row.phases[pidx];
+    const html = `<span class="editable-phase-date" data-idx="${idx}" data-pidx="${pidx}" data-field="${field}"><input type="date" class="date-input" value="${phase[field]||''}"></span>`;
+    phaseDateWrap.outerHTML = html;
+    const newWrap = e.currentTarget.querySelector(`.editable-phase-date[data-idx="${idx}"][data-pidx="${pidx}"][data-field="${field}"]`);
+    const inp = newWrap.querySelector('input');
+    inp.focus();
+    editingField = true;
+    let committed = false;
+    function commit(v){
+      committed = true;
+      phase[field] = v || null;
+      persistProject(idx, {phases: row.phases});
+      notify(row, `<b>${row.client}</b> — ${phase.name} ${field==='start'?'start date':'end date'} set to ${fmt(phase[field])}.`);
+      render();
+    }
+    inp.addEventListener('change', ()=>commit(inp.value));
+    inp.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const stageWrap = e.target.closest('.editable-stage');
+  if(stageWrap){
+    if(stageWrap.querySelector('select')) return;
+    const idx = stageWrap.dataset.idx;
+    const row = rows[idx];
+    const opts = PHASE_NAMES;
+    stageWrap.outerHTML = `<span class="editable-stage" data-idx="${idx}"><select class="stage-input">${opts.map(o=>`<option value="${o}" ${o===row.stage?'selected':''}>${o}</option>`).join('')}</select></span>`;
+    const newWrap = document.querySelector(`.editable-stage[data-idx="${idx}"]`);
+    const sel = newWrap.querySelector('select');
+    sel.focus();
+    editingField = true;
+    let committed = false;
+    function commit(v){
+      committed = true;
+      const from = row.stage;
+      row.stage = v;
+      row.modified = todayStr();
+      persistProject(idx, {stage:v, modified:row.modified});
+      notify(row, from===v ? `No change — <b>${row.client}</b> stays at ${v}.` : `<b>${row.client}</b> moved from <b>${from}</b> to <b>${v}</b>.`);
+      render();
+    }
+    sel.addEventListener('change', ()=>commit(sel.value));
+    sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const statusWrap = e.target.closest('.editable-status');
+  if(statusWrap){
+    if(statusWrap.querySelector('select')) return;
+    const idx = statusWrap.dataset.idx;
+    const row = rows[idx];
+    const opts = STATUS_OPTIONS.map(o=>`<option value="${o}" ${o===row.status?'selected':''}>${statusLabel(o)}</option>`).join('')
+      + (active==='overview' ? `<option value="__delete__">🗑 Delete this project…</option>` : '');
+    statusWrap.outerHTML = `<span class="editable-status" data-idx="${idx}"><select class="stage-input">${opts}</select></span>`;
+    const newWrap = document.querySelector(`.editable-status[data-idx="${idx}"]`);
+    const sel = newWrap.querySelector('select');
+    sel.focus();
+    editingField = true;
+    let committed = false;
+    function commit(v){
+      committed = true;
+      const from = row.status;
+      row.status = v;
+      row.modified = todayStr();
+      persistProject(idx, {status:v, modified:row.modified});
+      notify(row, from===v ? `No change — <b>${row.client}</b> stays ${v}.` : `<b>${row.client}</b> status changed from <b>${from}</b> to <b>${v}</b>.`);
+      render();
+    }
+    sel.addEventListener('change', ()=>{
+      if(sel.value==='__delete__'){
+        committed = true;
+        showConfirmModal({
+          title: 'Delete this project?',
+          message: `Delete the project for <b>${row.client}</b>? This also removes its linked tasks from Actions and the Programme. This cannot be undone here.`,
+          confirmLabel: 'Delete project',
+          onConfirm: ()=> deleteProject(idx),
+          onCancel: ()=> render()
+        });
+      } else {
+        commit(sel.value);
+      }
+    });
+    sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const taskWrap = e.target.closest('.editable-task-status');
+  if(taskWrap){
+    if(taskWrap.querySelector('select')) return;
+    const idx = taskWrap.dataset.idx;
+    const t = tasks[idx];
+    const taskOpts = TASK_STATUSES.map(s=>`<option value="${s}" ${s===t.status?'selected':''}>${statusLabel(s)}</option>`).join('')
+      + `<option value="__delete__">🗑 Delete this task…</option>`;
+    taskWrap.innerHTML = `<select class="stage-input">${taskOpts}</select>`;
+    const sel = taskWrap.querySelector('select');
+    sel.focus();
+    editingField = true;
+    let committed = false;
+    function commit(v){
+      committed = true;
+      t.status = v;
+      t.pct = statusDefaultPct(v);
+      persistTask(idx, {status:v, pct:t.pct});
+      notify(t, `<b>${t.owner}</b>: ${t.task} on <b>${t.client}</b> set to ${v}.`);
+      render();
+    }
+    sel.addEventListener('change', ()=>{
+      if(sel.value==='__delete__'){
+        committed = true;
+        showConfirmModal({
+          title: 'Delete this task?',
+          message: `Delete <b>${t.task}</b> for <b>${t.client}</b> (owned by ${t.owner})? This also removes it from the Programme. This cannot be undone here.`,
+          confirmLabel: 'Delete task',
+          onConfirm: ()=> deleteTask(idx),
+          onCancel: ()=> render()
+        });
+      } else {
+        commit(sel.value);
+      }
+    });
+    sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const typeWrap = e.target.closest('.editable-type');
+  if(typeWrap){
+    if(typeWrap.querySelector('select')) return;
+    const idx = typeWrap.dataset.idx;
+    const row = rows[idx];
+    const TYPE_OPTIONS = ['Extension','Lift Shaft','Renovation'];
+    const opts = TYPE_OPTIONS.map(o=>`<option value="${o}" ${o===row.type?'selected':''}>${o}</option>`).join('');
+    typeWrap.outerHTML = `<span class="editable-type" data-idx="${idx}"><select class="stage-input">${opts}</select></span>`;
+    const newWrap = document.querySelector(`.editable-type[data-idx="${idx}"]`);
+    const sel = newWrap.querySelector('select');
+    sel.focus();
+    editingField = true;
+    let committed = false;
+    function commit(v){
+      committed = true;
+      const from = row.type;
+      row.type = v;
+      row.modified = todayStr();
+      persistProject(idx, {type:v, modified:row.modified});
+      notify(row, from===v ? `No change — <b>${row.client}</b> stays ${v}.` : `<b>${row.client}</b> job type changed from <b>${from}</b> to <b>${v}</b>.`);
+      render();
+    }
+    sel.addEventListener('change', ()=>commit(sel.value));
+    sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const textWrap = e.target.closest('.editable-text');
+  if(textWrap){
+    if(textWrap.querySelector('input')) return;
+    const idx = textWrap.dataset.idx;
+    const field = textWrap.dataset.field;
+    const placeholder = textWrap.dataset.placeholder || '';
+    const row = rows[idx];
+    const currentVal = (row[field] === '—' ? '' : (row[field] || ''));
+    const html = `<span class="editable-text" data-idx="${idx}" data-field="${field}" data-placeholder="${placeholder.replace(/"/g,'&quot;')}"><input type="text" class="text-input" value="${currentVal.replace(/"/g,'&quot;')}" placeholder="${placeholder.replace(/"/g,'&quot;')}"></span>`;
+    textWrap.outerHTML = html;
+    const newWrap = e.currentTarget.querySelector(`.editable-text[data-idx="${idx}"][data-field="${field}"]`);
+    const inp = newWrap.querySelector('input');
+    inp.focus();
+    inp.select();
+    editingField = true;
+    let committed = false;
+    const fieldLabel = {client:'client name', quote:'quote number', job:'job number'}[field] || field;
+    function commit(v){
+      const val = v.trim();
+      if(field==='client' && !val){
+        showToast('Client name can\'t be blank — change was not saved.');
+        render();
+        return;
+      }
+      committed = true;
+      row[field] = val || ((field==='quote' || field==='job') ? '—' : val);
+      row.modified = todayStr();
+      persistProject(idx, {[field]: row[field], modified: row.modified});
+      notify(row, `<b>${row.client}</b> — ${fieldLabel} updated.`);
+      render();
+    }
+    inp.addEventListener('keydown', (ev)=>{
+      if(ev.key==='Enter'){ ev.preventDefault(); inp.blur(); }
+      if(ev.key==='Escape'){ committed = true; render(); }
+    });
+    inp.addEventListener('blur', ()=>{ if(!committed) commit(inp.value); });
+    return;
+  }
+
+  const dateWrap = e.target.closest('.editable-date');
+  if(dateWrap){
+    if(dateWrap.querySelector('input')) return;
+    const kind = dateWrap.dataset.kind || 'project';
+    const idx = dateWrap.dataset.idx;
+    const field = dateWrap.dataset.field;
+    const target = kind==='task' ? tasks[idx] : rows[idx];
+    const html = `<span class="editable-date" data-kind="${kind}" data-idx="${idx}" data-field="${field}"><input type="date" class="date-input" value="${target[field]||''}"></span>`;
+    dateWrap.outerHTML = html;
+    const newWrap = e.currentTarget.querySelector(`.editable-date[data-kind="${kind}"][data-idx="${idx}"][data-field="${field}"]`);
+    const inp = newWrap.querySelector('input');
+    inp.focus();
+    editingField = true;
+    let committed = false;
+    const fieldLabel = {start:'start date', end:'end date', liftOrdered:'lift ordered', liftExpected:'expected delivery'}[field] || field;
+    const label = kind==='task' ? `${target.task} (${target.client})` : target.client;
+    function commit(v){
+      committed = true;
+      target[field] = v || null;
+      if(kind==='project'){ target.modified = todayStr(); persistProject(idx, {[field]: target[field], modified: target.modified}); }
+      else persistTask(idx, {[field]: target[field]});
+      notify(target, `<b>${label}</b> — ${fieldLabel} set to ${fmt(target[field])}.`);
+      render();
+    }
+    inp.addEventListener('change', ()=>commit(inp.value));
+    inp.addEventListener('blur', ()=>{ if(!committed) render(); });
+    return;
+  }
+
+  const whatWrap = e.target.closest('.editable-what');
+  if(whatWrap){
+    if(whatWrap.querySelector('input')) return;
+    const idx = whatWrap.dataset.idx;
+    const target = tasks[idx];
+    const currentVal = (target.whatOverride!=null && target.whatOverride!=='') ? target.whatOverride : `${target.task} — ${shortStage(target.phase)}`;
+    whatWrap.outerHTML = `<span class="editable-what" data-idx="${idx}"><input type="text" class="text-input" value="${currentVal.replace(/"/g,'&quot;')}" placeholder="What needs to happen"></span>`;
+    const newWhatWrap = e.currentTarget.querySelector(`.editable-what[data-idx="${idx}"]`);
+    const whatInp = newWhatWrap.querySelector('input');
+    whatInp.focus();
+    whatInp.select();
+    editingField = true;
+    let whatCommitted = false;
+    function commitWhat(v){
+      const val = v.trim();
+      if(!val){
+        showToast('What can\'t be blank — change was not saved.');
+        render();
+        return;
+      }
+      whatCommitted = true;
+      target.whatOverride = val;
+      persistTask(idx, {whatOverride: val});
+      notify(target, `<b>${target.client}</b> — task updated.`);
+      render();
+    }
+    whatInp.addEventListener('keydown', (ev)=>{
+      if(ev.key==='Enter'){ ev.preventDefault(); whatInp.blur(); }
+      if(ev.key==='Escape'){ whatCommitted = true; render(); }
+    });
+    whatInp.addEventListener('blur', ()=>{ if(!whatCommitted) commitWhat(whatInp.value); });
+    return;
+  }
+
+  const commentWrap = e.target.closest('.editable-comment');
+  if(commentWrap){
+    if(commentWrap.parentElement.querySelector('textarea')) return;
+    const kind = commentWrap.dataset.kind || 'project';
+    const idx = commentWrap.dataset.idx;
+    const target = kind==='task' ? tasks[idx] : rows[idx];
+    commentWrap.outerHTML = `<textarea class="comment-input" data-kind="${kind}" data-idx="${idx}">${target.comment||''}</textarea>`;
+    const ta = e.currentTarget.querySelector(`textarea.comment-input[data-kind="${kind}"][data-idx="${idx}"]`);
+    ta.focus();
+    editingField = true;
+    let committed = false;
+    const label = kind==='task' ? `${target.task} (${target.client})` : target.client;
+    function commit(){
+      committed = true;
+      target.comment = ta.value.trim();
+      if(kind==='project'){ target.modified = todayStr(); persistProject(idx, {comment: target.comment, modified: target.modified}); }
+      else persistTask(idx, {comment: target.comment});
+      notify(target, `<b>${label}</b> — comment updated.`);
+      render();
+    }
+    ta.addEventListener('blur', commit);
+    ta.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter' && !ev.shiftKey){ ev.preventDefault(); ta.blur(); } });
+  }
+}
+
+document.getElementById('tbody').addEventListener('click', handleGridClick);
+document.getElementById('ganttCard').addEventListener('click', handleGridClick);
+
+function openBarStatusEditor(barEl, idx){
+  const row = rows[idx];
+  barEl.innerHTML = `<select class="gantt-status-select">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
+  const sel = barEl.querySelector('select');
+  sel.focus();
+  editingField = true;
+  let committed = false;
+  function commit(v){
+    committed = true;
+    row.status = v;
+    row.modified = todayStr();
+    persistProject(idx, {status:v, modified:row.modified});
+    notify(row, `<b>${row.client}</b> — status set to ${v}.`);
+    render();
+  }
+  sel.addEventListener('change', ()=>commit(sel.value));
+  sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+}
+
+function openTaskBarStatusEditor(barEl, tIdx){
+  const t = tasks[tIdx];
+  barEl.innerHTML = `<select class="gantt-status-select">${TASK_STATUSES.map(s=>`<option value="${s}" ${s===t.status?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
+  const sel = barEl.querySelector('select');
+  sel.focus();
+  editingField = true;
+  let committed = false;
+  function commit(v){
+    committed = true;
+    t.status = v;
+    t.pct = statusDefaultPct(v);
+    persistTask(tIdx, {status:v, pct:t.pct});
+    notify(t, `<b>${t.owner}</b>: ${t.task} on <b>${t.client}</b> set to ${v}.`);
+    render();
+  }
+  sel.addEventListener('change', ()=>commit(sel.value));
+  sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+}
+
+function openPhaseBarStatusEditor(barEl, idx, phaseIdx){
+  const row = rows[idx];
+  const phase = row.phases[phaseIdx];
+  barEl.innerHTML = `<select class="gantt-status-select">${phaseStatusOptions().map(s=>`<option value="${s}" ${s===phase.status?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
+  const sel = barEl.querySelector('select');
+  sel.focus();
+  editingField = true;
+  let committed = false;
+  function commit(v){
+    committed = true;
+    phase.status = v;
+    if(v==='In Progress'){ row.stage = phase.name; row.modified = todayStr(); }
+    persistProject(idx, {phases: row.phases, stage: row.stage});
+    notify(row, `<b>${row.client}</b> — ${phase.name} set to ${v}.`);
+    render();
+  }
+  sel.addEventListener('change', ()=>commit(sel.value));
+  sel.addEventListener('blur', ()=>{ if(!committed) render(); });
+}
+
+document.getElementById('ganttCard').addEventListener('mousedown', function(e){
+  const bar = e.target.closest('.gantt-drag-bar, .gantt-status-only, .gantt-task-bar');
+  if(!bar || bar.querySelector('select')) return;
+  e.preventDefault();
+
+  const isTask = bar.classList.contains('gantt-task-bar');
+  const isPhase = bar.classList.contains('gantt-phase-bar');
+  const idx = bar.dataset.idx;
+  const taskIdx = bar.dataset.taskIdx;
+  const phaseIdx = bar.dataset.phaseIdx;
+  const startField = bar.dataset.startField;
+  const endField = bar.dataset.endField;
+  const canDrag = bar.classList.contains('gantt-drag-bar') && startField && endField;
+
+  const rect = bar.getBoundingClientRect();
+  const edgeZone = 8;
+  let mode = 'move';
+  if(canDrag){
+    const offsetInBar = e.clientX - rect.left;
+    if(offsetInBar <= edgeZone) mode = 'resize-left';
+    else if(offsetInBar >= rect.width - edgeZone) mode = 'resize-right';
+  }
+
+  const startX = e.clientX;
+  const origLeft = parseFloat(bar.style.left) || 0;
+  const origWidth = parseFloat(bar.style.width) || 0;
+  let dragged = false;
+  document.body.style.userSelect = 'none';
+
+  const target = isTask ? tasks[taskIdx] : (isPhase ? rows[idx].phases[phaseIdx] : rows[idx]);
+  const origStartVal = canDrag ? target[startField] : null;
+  const origEndVal = canDrag ? target[endField] : null;
+  const daysPerPx = 7/WEEK_WIDTH;
+
+  function onMove(ev){
+    if(!canDrag) return;
+    const dx = ev.clientX - startX;
+    if(Math.abs(dx) > 3) dragged = true;
+    if(!dragged) return;
+    let newLeft = origLeft, newWidth = origWidth;
+    if(mode==='move') newLeft = origLeft + dx;
+    else if(mode==='resize-left'){ newLeft = origLeft + dx; newWidth = origWidth - dx; }
+    else if(mode==='resize-right'){ newWidth = origWidth + dx; }
+    if(newWidth < 10){ if(mode==='resize-left') newLeft = origLeft + origWidth - 10; newWidth = 10; }
+    bar.style.left = newLeft + 'px';
+    bar.style.width = newWidth + 'px';
+    /* Live date readout inside the bar — updates as it moves, before anything is committed. */
+    const dateSpan = bar.querySelector('.bar-date-text');
+    if(dateSpan){
+      let previewStart = origStartVal, previewEnd = origEndVal;
+      if(mode==='move'){
+        const deltaDays = Math.round((newLeft-origLeft)*daysPerPx);
+        previewStart = addDays(origStartVal, deltaDays); previewEnd = addDays(origEndVal, deltaDays);
+      } else if(mode==='resize-left'){
+        const deltaDays = Math.round((newLeft-origLeft)*daysPerPx);
+        previewStart = addDays(origStartVal, deltaDays);
+      } else if(mode==='resize-right'){
+        const deltaDays = Math.round((newWidth-origWidth)*daysPerPx);
+        previewEnd = addDays(origEndVal, deltaDays);
+      }
+      dateSpan.textContent = `${fmt(previewStart)} → ${fmt(previewEnd)}`;
+    }
+  }
+
+  function onUp(){
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.body.style.userSelect = '';
+    if(!dragged){
+      if(isTask) openTaskBarStatusEditor(bar, taskIdx);
+      else if(isPhase) openPhaseBarStatusEditor(bar, idx, phaseIdx);
+      else openBarStatusEditor(bar, idx);
+      return;
+    }
+    const finalLeft = parseFloat(bar.style.left);
+    const finalWidth = parseFloat(bar.style.width);
+    if(mode==='move'){
+      const deltaDays = Math.round((finalLeft-origLeft)*daysPerPx);
+      if(deltaDays!==0){ target[startField] = addDays(target[startField], deltaDays); target[endField] = addDays(target[endField], deltaDays); }
+    } else if(mode==='resize-left'){
+      const deltaDays = Math.round((finalLeft-origLeft)*daysPerPx);
+      if(deltaDays!==0) target[startField] = addDays(target[startField], deltaDays);
+    } else if(mode==='resize-right'){
+      const deltaDays = Math.round((finalWidth-origWidth)*daysPerPx);
+      if(deltaDays!==0) target[endField] = addDays(target[endField], deltaDays);
+    }
+    if(isTask){
+      persistTask(taskIdx, {[startField]: target[startField], [endField]: target[endField]});
+      notify(target, `<b>${target.owner}</b>: ${target.task} on <b>${target.client}</b> — schedule updated.`);
+    } else if(isPhase){
+      const row = rows[idx];
+      persistProject(idx, {phases: row.phases});
+      notify(row, `<b>${row.client}</b> — ${target.name} dates updated (${fmt(target.start)} → ${fmt(target.end)}).`);
+    } else {
+      target.modified = todayStr();
+      persistProject(idx, {[startField]: target[startField], [endField]: target[endField], modified: target.modified});
+      notify(target, `<b>${target.client}</b> — schedule updated. Also reflected in All Projects.`);
+    }
+    render();
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+});
+
+/* Simulated background sync — stands in for the real app's Netlify Database refresh. Runs every
+   20s, and skips entirely while a field, the phase-add form, the new-task form or the "+ New"
+   project form is being edited, so nothing gets wiped mid-edit — that guard has no time limit of
+   its own; it simply waits until you're done, however long that takes. */
+function backgroundSyncTick(){
+  if(editingField || addingNew || addingTaskFor!==null) return;
+  render();
+}
+window.setInterval(backgroundSyncTick, 20000);
+
+render();
+</script>
+</body>
+</html>
