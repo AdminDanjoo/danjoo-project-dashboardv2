@@ -431,19 +431,105 @@ function currentPhase(r){
 
 let OWNERS = SEED_OWNERS.slice();
 
-/* ---- Concept-mode persistence: kept in memory for this tab only, no live backend ---- */
-let dbAvailable = true;
+/* ---- Live persistence through the same-origin Netlify Function ---- */
+const DASHBOARD_API = '/api/dashboard';
+let dbAvailable = false;
+let syncState = 'connecting';
+let pendingWrites = 0;
+let writeQueue = Promise.resolve();
+let refreshInFlight = false;
+
 function updateSyncStatus(){
   const el = document.getElementById('syncStatus');
   if(!el) return;
-  el.innerHTML = '<span style="color:var(--amber-text);">●</span> Concept preview — changes stay in this tab only';
+  if(syncState==='saving'){
+    el.innerHTML = '<span style="color:var(--amber-text);">●</span> Saving changes…';
+  } else if(syncState==='error'){
+    el.innerHTML = '<span style="color:#D13438;">●</span> Not saved — connection error';
+  } else if(syncState==='live'){
+    el.innerHTML = '<span style="color:#107C10;">●</span> Live — all changes saved';
+  } else {
+    el.innerHTML = '<span style="color:var(--amber-text);">●</span> Connecting…';
+  }
 }
-async function persist(){ return Promise.resolve(); }
-function persistProject(){ return persist(); }
-function persistNewProject(){ return persist(); }
-function persistTask(){ return persist(); }
-function persistNewTask(){ return persist(); }
-function persistOwners(){ return persist(); }
+
+async function apiRequest(body){
+  const options = body ? {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  } : {method:'GET', headers:{'Accept':'application/json'}};
+  const response = await fetch(DASHBOARD_API, options);
+  const data = await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(data.error || `Database request failed (${response.status})`);
+  return data;
+}
+
+function persist(action, payload){
+  pendingWrites += 1;
+  syncState = 'saving';
+  updateSyncStatus();
+  writeQueue = writeQueue.catch(()=>{}).then(()=>apiRequest({action, ...payload})).then(()=>{
+    pendingWrites -= 1;
+    dbAvailable = true;
+    syncState = pendingWrites ? 'saving' : 'live';
+    updateSyncStatus();
+  }).catch(error=>{
+    pendingWrites = Math.max(0, pendingWrites-1);
+    dbAvailable = false;
+    syncState = 'error';
+    updateSyncStatus();
+    showToast(`Change not saved: <b>${error.message}</b>`);
+    return {ok:false, error};
+  });
+  return writeQueue;
+}
+function persistProject(idx, patch){ return persist('patchProject', {idx:Number(idx), patch}); }
+function persistNewProject(project){ return persist('upsertProject', {project}); }
+function persistTask(idx, patch){ return persist('patchTask', {idx:Number(idx), patch}); }
+function persistNewTask(task){ return persist('upsertTask', {task}); }
+function persistOwners(){ return persist('setOwners', {owners:OWNERS}); }
+
+function hydrateState(state){
+  const remoteRows = [];
+  (state.projects||[]).forEach(project=>{
+    if(!Number.isSafeInteger(project.idx)) return;
+    remoteRows[project.idx] = {...project, phases:(project.phases||[]).map(phase=>({...phase}))};
+  });
+  const remoteTasks = [];
+  (state.tasks||[]).forEach(task=>{
+    if(!Number.isSafeInteger(task.idx)) return;
+    remoteTasks[task.idx] = {...task};
+  });
+  rows = remoteRows;
+  tasks = remoteTasks;
+  OWNERS = Array.isArray(state.owners) && state.owners.length ? [...state.owners] : SEED_OWNERS.slice();
+  actionFilter.owners = new Set(OWNERS);
+}
+
+async function loadRemoteState({initial=false}={}){
+  if(refreshInFlight || pendingWrites || editingField || addingNew || addingTaskFor!==null) return;
+  refreshInFlight = true;
+  if(initial){ syncState='connecting'; updateSyncStatus(); }
+  try{
+    let state = await apiRequest();
+    if(!state.initialized){
+      await apiRequest({action:'seed', projects:rows.filter(Boolean), tasks:tasks.filter(Boolean), owners:OWNERS});
+      state = await apiRequest();
+    }
+    hydrateState(state);
+    dbAvailable = true;
+    syncState = 'live';
+    render();
+  } catch(error){
+    dbAvailable = false;
+    syncState = 'error';
+    updateSyncStatus();
+    if(initial) showToast(`Live database connection failed: <b>${error.message}</b>`);
+  } finally {
+    refreshInFlight = false;
+  }
+}
 
 /* ---- Change history: every edit is logged against the project/task it touched, shown in the Edit screen ---- */
 function logChange(target, text){
@@ -658,22 +744,20 @@ function projectActionItems(r){
   }));
 }
 function actionsProjectIdxs(){
-  return rows.filter(r=>!r.deleted && projectActionItems(r).length).map(r=>r.idx);
+  /* Every live project belongs in Actions, even when it has no tasks yet.
+     This keeps the project expandable so a first task can always be added. */
+  return rows.filter(r=>!r.deleted).map(r=>r.idx);
 }
 function buildActions(){
   const groups = orderProjects(rows.filter(r=>!r.deleted));
   const out = [];
   let n = 1;
   for(const g of groups){
-    const withItems = [];
+    if(g.group) out.push(`<tr class="group-row"><td colspan="9">${g.group} (${g.rows.length})</td></tr>`);
     g.rows.forEach(r=>{
       const items = projectActionItems(r);
-      if(items.length) withItems.push({r, items});
-    });
-    if(!withItems.length) continue;
-    if(g.group) out.push(`<tr class="group-row"><td colspan="9">${g.group} (${withItems.reduce((s,x)=>s+x.items.length,0)})</td></tr>`);
-    withItems.forEach(({r,items})=>{
-      out.push(projectHeaderRowHtml(r, n++, items.length));
+      const totalItems = tasks.filter(t=>!t.deleted && t.projectIdx===r.idx).length;
+      out.push(projectHeaderRowHtml(r, n++, items.length, totalItems));
       if(expandedActionsProject.has(r.idx)){
         out.push(...items.map(it=>actionRowHtml(it)));
         out.push(addingTaskFor===r.idx ? newTaskFormHtmlForProject(r) : addTaskTriggerRowHtml(r));
@@ -682,14 +766,17 @@ function buildActions(){
   }
   return out;
 }
-function projectHeaderRowHtml(r, num, openCount){
+function projectHeaderRowHtml(r, num, visibleCount, totalCount){
   const open = expandedActionsProject.has(r.idx);
+  const countLabel = visibleCount
+    ? `${visibleCount} action${visibleCount===1?'':'s'}`
+    : (totalCount ? 'No matching actions' : 'No actions yet');
   return `<tr class="project-group-row">
     <td class="muted" data-label="#">${num}</td>
     <td colspan="8">
       <button class="action-expand-btn" data-idx="${r.idx}" title="${open?'Hide items':'Show items for this project'}">${open?'▾':'▸'}</button>
       <span class="client">${r.client}</span> <span class="muted">- ${r.stage}</span>
-      <span class="pill small standby" style="margin-left:10px;">${openCount} open</span>
+      <span class="pill small standby" style="margin-left:10px;">${countLabel}</span>
     </td>
   </tr>`;
 }
@@ -2162,17 +2249,18 @@ document.getElementById('ganttCard').addEventListener('mousedown', function(e){
   document.addEventListener('mouseup', onUp);
 });
 
-/* Simulated background sync — stands in for the real app's Netlify Database refresh. Runs every
-   20s, and skips entirely while a field, the phase-add form, the new-task form or the "+ New"
-   project form is being edited, so nothing gets wiped mid-edit — that guard has no time limit of
-   its own; it simply waits until you're done, however long that takes. */
+/* Refresh centrally stored changes made by other users. Never refresh over an active edit or while
+   this tab is still saving, so a local change cannot be wiped mid-edit. */
 function backgroundSyncTick(){
-  if(editingField || addingNew || addingTaskFor!==null) return;
-  render();
+  loadRemoteState();
 }
-window.setInterval(backgroundSyncTick, 20000);
+window.setInterval(backgroundSyncTick, 15000);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible') loadRemoteState();
+});
 
 render();
+loadRemoteState({initial:true});
 </script>
 </body>
 </html>
