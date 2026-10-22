@@ -200,7 +200,7 @@
   /* Compact view: whole project span in a light tint, current phase in full colour on top. */
   .gantt-bar.span-light{box-shadow:inset 0 0 0 999px rgba(255,255,255,.62); color:var(--text);}
   .gantt-bar.span-light .cur-phase-seg{position:absolute; top:0; bottom:0; border-radius:4px; box-shadow:none; pointer-events:none;}
-  .gantt-bar.span-light .seg-label{position:relative; z-index:1; margin-left:3px; padding:1px 6px; border-radius:3px; background:rgba(255,255,255,.88); color:var(--text);}
+  .gantt-bar.span-light .seg-label{position:relative; z-index:1; color:var(--text); text-shadow:0 0 2px #fff, 0 0 4px #fff, 0 0 6px rgba(255,255,255,.9);}
   .today-line{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed #D13438; z-index:5;}
   .today-tag{
     position:absolute; top:-1px; transform:translateX(-50%); background:#D13438; color:#fff;
@@ -409,6 +409,7 @@ const SEED_TASKS = SEED_TASKS_RAW.map((t,i)=>{
 const SEED_OWNERS = ['Rachel','Chris','Joseph Bellis','Unassigned'];
 
 let rows = SEED_ROWS.map(r=>({...r, phases:(r.phases||[]).map(p=>({...p}))}));
+rows.forEach(r=>syncProjectSpan(r));
 let tasks = SEED_TASKS.map(t=>({...t}));
 
 function daysAgo(dstr){ return Math.round((TODAY - new Date(dstr)) / 86400000); }
@@ -425,6 +426,19 @@ function effectivePct(r){
   const lt = linkedTasks(r.idx);
   if(!lt.length) return r.pct;
   return Math.round(lt.reduce((s,t)=>s+t.pct,0)/lt.length);
+}
+/* Phases are the single source of a project's dates: when a project has dated phases, its overall
+   Start/End is always first phase start → last phase end, so Compact (project bar) and Detailed
+   (phase bars) can never disagree. Projects without dated phases keep their own Start/End. */
+function datedPhases(r){ return (r && r.phases ? r.phases : []).filter(p=>p.start && p.end); }
+function syncProjectSpan(r){
+  const ph = datedPhases(r);
+  if(!ph.length) return false;
+  const s0 = ph.reduce((m,p)=> p.start < m ? p.start : m, ph[0].start);
+  const e0 = ph.reduce((m,p)=> p.end > m ? p.end : m, ph[0].end);
+  const changed = r.start!==s0 || r.end!==e0;
+  r.start = s0; r.end = e0;
+  return changed;
 }
 function currentPhase(r){
   if(!r.phases || !r.phases.length) return null;
@@ -488,7 +502,13 @@ function persist(action, payload){
   });
   return writeQueue;
 }
-function persistProject(idx, patch){ return persist('patchProject', {idx:Number(idx), patch}); }
+function persistProject(idx, patch){
+  const row = rows[Number(idx)];
+  if(row && patch && 'phases' in patch && syncProjectSpan(row)){
+    patch = {...patch, start: row.start, end: row.end};
+  }
+  return persist('patchProject', {idx:Number(idx), patch});
+}
 function persistNewProject(project){ return persist('upsertProject', {project}); }
 function persistTask(idx, patch){ return persist('patchTask', {idx:Number(idx), patch}); }
 function persistNewTask(task){ return persist('upsertTask', {task}); }
@@ -505,6 +525,7 @@ function hydrateState(state){
     if(!Number.isSafeInteger(task.idx)) return;
     remoteTasks[task.idx] = {...task};
   });
+  remoteRows.forEach(r=>{ if(r) syncProjectSpan(r); });
   rows = remoteRows;
   tasks = remoteTasks;
   OWNERS = Array.isArray(state.owners) && state.owners.length ? [...state.owners] : SEED_OWNERS.slice();
@@ -1073,8 +1094,8 @@ function openEditProjectModal(idx, allowDelete){
       <label>Current Stage<select id="emStage">${PHASE_NAMES.map(s=>`<option value="${s}" ${s===row.stage?'selected':''}>${s}</option>`).join('')}</select></label>
       <label>% Complete<select id="emPct" ${linkedTasks(idx).length?'disabled':''}>${[0,25,50,75,100].map(v=>`<option value="${v}" ${v===row.pct?'selected':''}>${v}%</option>`).join('')}</select></label>
       <label>Priority<select id="emPriority"><option value="false" ${!row.priority?'selected':''}>Standard</option><option value="true" ${row.priority?'selected':''}>Priority</option></select></label>
-      <label>Start<input type="date" id="emStart" value="${row.start||''}"></label>
-      <label>End<input type="date" id="emEnd" value="${row.end||''}"></label>
+      <label>Start<input type="date" id="emStart" value="${row.start||''}"${datedPhases(row).length?' disabled title="Set by the phase dates — change a phase to move this"':''}></label>
+      <label>End<input type="date" id="emEnd" value="${row.end||''}"${datedPhases(row).length?' disabled title="Set by the phase dates — change a phase to move this"':''}></label>
       ${row.type==='Lift Shaft' ? `<label>Lift Ordered<input type="date" id="emLiftOrdered" value="${row.liftOrdered||''}"></label><label>Lift Expected<input type="date" id="emLiftExpected" value="${row.liftExpected||''}"></label>` : ''}
     </div>
     <label style="display:block;margin-top:12px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;">Comment<textarea id="emComment" style="width:100%;min-height:60px;font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid #C8C6C4;border-radius:4px;margin-top:4px;text-transform:none;font-weight:400;">${row.comment||''}</textarea></label>
@@ -1398,9 +1419,9 @@ function mainBarHtml(r, lineIdx){
   const showSplit = cur && (curLeft > overallLeft + 1 || curRight < overallRight - 1) && curRight > curLeft;
   if(showSplit){
     const segLeft = curLeft - overallLeft, segWidth = Math.max(curRight - curLeft, 6);
-    return `<div class="gantt-bar gantt-drag-bar ${cls} span-light" data-idx="${r.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${overallLeft}px;width:${overallWidth}px;" title="Project ${fmt(r.start)} → ${fmt(r.end)} · current phase ${fmt(cur.start)} → ${fmt(cur.end)}"><div class="cur-phase-seg ${cls}" style="left:${segLeft}px;width:${segWidth}px;"></div><span class="seg-label">${r.stage} · ${barDateSpan(r.start, r.end)}</span></div>`;
+    return `<div class="gantt-bar gantt-drag-bar ${cls} span-light" data-idx="${r.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${overallLeft}px;width:${overallWidth}px;" title="Project ${fmt(r.start)} → ${fmt(r.end)} · current phase ${fmt(cur.start)} → ${fmt(cur.end)}"><div class="cur-phase-seg ${cls}" style="left:${segLeft}px;width:${segWidth}px;"></div><span class="seg-label">${(cur && cur.name) || r.stage} · ${barDateSpan(r.start, r.end)}</span></div>`;
   }
-  return `<div class="gantt-bar gantt-drag-bar ${cls}" data-idx="${r.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${overallLeft}px;width:${overallWidth}px;"><span class="seg-label">${r.stage} · ${barDateSpan(r.start, r.end)}</span></div>`;
+  return `<div class="gantt-bar gantt-drag-bar ${cls}" data-idx="${r.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${overallLeft}px;width:${overallWidth}px;"><span class="seg-label">${(cur && cur.name) || r.stage} · ${barDateSpan(r.start, r.end)}</span></div>`;
 }
 function phaseBarHtml(r, p, lineIdx){
   const top = lineIdx*LINE_H+4, h = LINE_H-8;
@@ -2292,6 +2313,26 @@ document.getElementById('ganttCard').addEventListener('mousedown', function(e){
       const row = rows[idx];
       persistProject(idx, {phases: row.phases});
       notify(row, `<b>${row.client}</b> — ${target.name} dates updated (${fmt(target.start)} → ${fmt(target.end)}).`);
+    } else if(datedPhases(target).length && (startField==='start' || endField==='end')){
+      /* Project with phases: the bar is drawn from the phases, so dragging it changes the phases.
+         Move = shift every phase; left edge = first phase start; right edge = last phase end. */
+      const ph = datedPhases(target);
+      const first = ph.reduce((m,p)=> p.start < m.start ? p : m, ph[0]);
+      const last = ph.reduce((m,p)=> p.end > m.end ? p : m, ph[0]);
+      const dStart = Math.round((new Date(target[startField]) - new Date(origStartVal))/86400000);
+      const dEnd = Math.round((new Date(target[endField]) - new Date(origEndVal))/86400000);
+      if(startField==='start' && mode==='move'){
+        ph.forEach(p=>{ p.start = addDays(p.start, dStart); p.end = addDays(p.end, dStart); });
+      } else {
+        if(startField==='start' && dStart){ first.start = addDays(first.start, dStart); if(first.start > first.end) first.start = first.end; }
+        if(endField==='end' && dEnd){ last.end = addDays(last.end, dEnd); if(last.end < last.start) last.end = last.start; }
+      }
+      syncProjectSpan(target);
+      target.modified = todayStr();
+      const patch = {phases: target.phases, start: target.start, end: target.end, modified: target.modified};
+      if(startField!=='start') patch[startField] = target[startField];
+      persistProject(idx, patch);
+      notify(target, `<b>${target.client}</b> — phase dates updated (${fmt(target.start)} → ${fmt(target.end)}).`);
     } else {
       target.modified = todayStr();
       persistProject(idx, {[startField]: target[startField], [endField]: target[endField], modified: target.modified});
