@@ -196,7 +196,11 @@
   .seg-hold{background:repeating-linear-gradient(45deg,#C8C6C4,#C8C6C4 5px,#E1DFDD 5px,#E1DFDD 10px); color:#484644;}
   .seg-pending{background:#FFB900; color:#4A3B00;}
   .seg-overdue{background:#D13438; color:#fff;}
-  .seg-label{padding:0 6px; overflow:hidden; text-overflow:ellipsis;}
+  .seg-label{padding:0 6px; overflow:hidden; text-overflow:ellipsis; flex:0 1 auto; min-width:0;}
+  /* Compact view: whole project span in a light tint, current phase in full colour on top. */
+  .gantt-bar.span-light{box-shadow:inset 0 0 0 999px rgba(255,255,255,.62); color:var(--text);}
+  .gantt-bar.span-light .cur-phase-seg{position:absolute; top:0; bottom:0; border-radius:4px; box-shadow:none; pointer-events:none;}
+  .gantt-bar.span-light .seg-label{position:relative; z-index:1; margin-left:3px; padding:1px 6px; border-radius:3px; background:rgba(255,255,255,.88); color:var(--text);}
   .today-line{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed #D13438; z-index:5;}
   .today-tag{
     position:absolute; top:-1px; transform:translateX(-50%); background:#D13438; color:#fff;
@@ -1274,6 +1278,46 @@ function showConfirmModal({ title, message, confirmLabel='Delete', onConfirm, on
   overlay.querySelector('#modalConfirmBtn').focus();
 }
 
+/* ---- Gantt: keep every bar's label in view ----
+   When a bar starts left of the visible timeline (behind the sticky #/Type/Project columns, or
+   scrolled out), its label would be cut off at the start ("…ing Drawings · 21 July"). This slides
+   each label right so it starts at the first visible pixel of its bar, and never past the bar's
+   own end. Runs on scroll, resize and whenever the Gantt is redrawn or a bar is dragged. */
+let ganttPinQueued = false;
+function pinGanttLabels(){
+  ganttPinQueued = false;
+  document.querySelectorAll('.gantt-scroll').forEach(sc=>{
+    const scRect = sc.getBoundingClientRect();
+    const stickyLabel = sc.querySelector('.gantt-row:not(.header-row) .gantt-label') || sc.querySelector('.gantt-label');
+    const visibleLeft = stickyLabel ? stickyLabel.getBoundingClientRect().right : scRect.left;
+    sc.querySelectorAll('.gantt-bar').forEach(bar=>{
+      const label = bar.querySelector('.seg-label');
+      if(!label) return;
+      const br = bar.getBoundingClientRect();
+      const room = Math.max(0, br.width - label.offsetWidth - 4);
+      const offset = Math.min(Math.max(0, visibleLeft - br.left), room);
+      const next = offset > 0.5 ? `translateX(${Math.round(offset)}px)` : '';
+      if(label.style.transform !== next) label.style.transform = next;
+    });
+  });
+}
+function scheduleGanttPin(){
+  if(ganttPinQueued) return;
+  ganttPinQueued = true;
+  requestAnimationFrame(pinGanttLabels);
+}
+document.addEventListener('scroll', e=>{
+  if(e.target && e.target.classList && e.target.classList.contains('gantt-scroll')) scheduleGanttPin();
+}, true);
+window.addEventListener('resize', scheduleGanttPin);
+(function watchGantt(){
+  const card = document.getElementById('ganttCard');
+  if(!card) return;
+  new MutationObserver(muts=>{
+    if(muts.some(m=>!(m.target.classList && m.target.classList.contains('seg-label')))) scheduleGanttPin();
+  }).observe(card, {childList:true, subtree:true, attributes:true, attributeFilter:['style']});
+})();
+
 /* ---- Gantt (weekly) ---- */
 function isoWeekNumber(dt){
   const d = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
@@ -1345,6 +1389,17 @@ function mainBarHtml(r, lineIdx){
   /* Overdue check uses r.end, not the phase's own end date — the bar itself is drawn to r.start/
      r.end (the project's overall span), so redness must follow whatever the bar visually covers. */
   const cls = barStatusClass(effStatus, r.end);
+  /* Compact: the whole project span is drawn in a light tint, and only the current phase is
+     drawn in full colour — so a project that has just moved into a new phase no longer looks as
+     if that phase covers the whole bar. Falls back to the plain full-colour bar when there is no
+     phase, or the current phase already spans the whole project. */
+  const curLeft = cur && cur.start ? Math.max(xPos(cur.start), overallLeft) : overallLeft;
+  const curRight = cur && cur.end ? Math.min(xPos(cur.end), overallRight) : overallRight;
+  const showSplit = cur && (curLeft > overallLeft + 1 || curRight < overallRight - 1) && curRight > curLeft;
+  if(showSplit){
+    const segLeft = curLeft - overallLeft, segWidth = Math.max(curRight - curLeft, 6);
+    return `<div class="gantt-bar gantt-drag-bar ${cls} span-light" data-idx="${r.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${overallLeft}px;width:${overallWidth}px;" title="Project ${fmt(r.start)} → ${fmt(r.end)} · current phase ${fmt(cur.start)} → ${fmt(cur.end)}"><div class="cur-phase-seg ${cls}" style="left:${segLeft}px;width:${segWidth}px;"></div><span class="seg-label">${r.stage} · ${barDateSpan(r.start, r.end)}</span></div>`;
+  }
   return `<div class="gantt-bar gantt-drag-bar ${cls}" data-idx="${r.idx}" data-start-field="start" data-end-field="end" style="top:${top}px;height:${h}px;left:${overallLeft}px;width:${overallWidth}px;"><span class="seg-label">${r.stage} · ${barDateSpan(r.start, r.end)}</span></div>`;
 }
 function phaseBarHtml(r, p, lineIdx){
